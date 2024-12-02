@@ -1,0 +1,402 @@
+---
+# TODO: add tests
+
+# Define the module defaults
+- module_defaults:
+    group/infoblox.bloxone.all:
+      csp_url: "{{ csp_url }}"
+      api_key: "{{ api_key }}"
+
+  block:
+    # Create an A record with a random name to avoid conflicts
+    - ansible.builtin.set_fact:
+        record_name: "test-a-record-{{ 999999 | random | string }}"
+        absolute_name_spec:  "ANS_test-a-record-{{ 999999 | random | string }}.com."
+
+    #  Create an A Record (check mode) (with ANS)
+    - name: Create an A Record (check mode)
+      infoblox.bloxone.dns_record:
+        absolute_name_spec: "{{ absolute_name_spec }}"
+        view: "{{ _view.id }}"
+        rdata:
+          address: "192.0.0.0"
+        type: "A"
+        state: present
+      check_mode: true
+      register: a_record
+    - name: Get information about the A Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          absolute_name_spec: "{{ absolute_name_spec }}"
+          type: A
+      register: a_record_info
+    - assert:
+       that:
+         - a_record is changed
+         - a_record is not failed
+         - a_record_info.objects | length == 0
+
+          # Create an A Record
+    - name: Create an A Record
+      infoblox.bloxone.dns_record:
+        absolute_name_spec: "{{ absolute_name_spec }}"
+        view: "{{ _view.id }}"
+        type: A
+        rdata:
+          address: "192.168.10.10"
+        state: present
+      register: a_record
+    - name: Get information about the A Record
+      infoblox.bloxone.dns_record_info:
+          filters:
+            absolute_name_spec: "{{ absolute_name_spec }}"
+            type: A
+      register: a_record_info
+    - assert:
+        that:
+          - a_record is changed
+          - a_record is not failed
+          - a_record_info.objects | length == 1
+
+    # Create an A Record (check mode)
+    - name: Create an A Record (check mode)
+      infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
+        zone: "{{ _auth_zone.id }}"
+        rdata:
+          address: "192.168.10.0"
+        type: "A"
+        state: present
+      check_mode: true
+      register: a_record
+    - name: Get information about the A Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          name_in_zone: "{{ record_name }}"
+          type: A
+      register: a_record_info
+    - assert:
+        that:
+          - a_record is changed
+          - a_record is not failed
+          - a_record_info.objects | length == 0
+
+    # Create an A Record
+    - name: Create an A Record
+      infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
+        zone: "{{ _auth_zone.id }}"
+        type: A
+        rdata:
+          address: "192.168.10.10"
+        state: present
+      register: a_record
+    - name: Get information about the A Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          name_in_zone: "{{ record_name }}"
+          type: A
+      register: a_record_info
+    - assert:
+        that:
+          - a_record is changed
+          - a_record is not failed
+          - a_record_info.objects | length == 1
+          - a_record_info.objects[0].id == a_record.id
+          - a_record_info.objects[0].rdata.address == a_record.object.rdata.address
+          - a_record_info.objects[0].type == a_record.object.type
+          - a_record_info.objects[0].zone == a_record.object.zone
+          - a_record_info.objects[0].name_in_zone == a_record.object.name_in_zone
+
+    # Create an A Record (idempotent)
+    - name: Create an A Record (idempotent)
+      infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
+        zone: "{{ _auth_zone.id }}"
+        type: A
+        rdata:
+          address: "192.168.10.10"
+        state: present
+      register: a_record
+    - name: Get information about the A Record (idempotent)
+      infoblox.bloxone.dns_record_info:
+        filters:
+          name_in_zone: "{{ record_name }}"
+          type: A
+      register: a_record_info
+    - assert:
+        that:
+          - a_record is not changed
+          - a_record is not failed
+
+    # Update the A Record (check mode)
+    - name: Update the A Record (check mode)
+      infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
+        zone: "{{ _auth_zone.id }}"
+        rdata:
+          address: "192.168.10.20"
+        comment: "Updated A Record"
+        type: A
+        state: present
+      check_mode: true
+      register: a_record
+    - name: Get information about the A Record
+      infoblox.bloxone.dns_record_info:
+          filters:
+            name_in_zone: "{{ record_name }}"
+            type: A
+      register: a_record_info
+    - assert:
+        that:
+          - a_record is changed
+          - a_record is not failed
+          - a_record_info.objects | length == 1
+
+    # Update the A Record
+    - name: Update the A Record
+      infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
+        zone: "{{ _auth_zone.id }}"
+        rdata:
+          address: "192.162.10.20"
+        comment: "Updated A Record"
+        type: A
+        state: present
+      register: a_record
+    - name: Get information about the A Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          name_in_zone: "{{ record_name }}"
+          type: A
+      register: a_record_info
+    - assert:
+        that:
+          - a_record is not failed
+          - a_record_info.objects | length == 1
+          - a_record_info.objects[0].id == a_record.id
+          - a_record_info.objects[0].comment == "Updated A Record"
+          - a_record_info.objects[0].rdata.address == a_record.object.rdata.address
+
+    # Update A Record (idempotency check)
+    - name: Update A Record is idempotent
+      infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
+        zone: "{{ _auth_zone.id }}"
+        rdata:
+          address: "192.168.10.20"
+        comment: "Updated A Record"
+        type: A
+        state: present
+      register: a_record_update_idempotent
+    - name: Get information about the A Record (idempotent)
+      infoblox.bloxone.dns_record_info:
+        filters:
+          name_in_zone: "{{ record_name }}"
+          type: A
+      register: a_record_info_idempotent
+    - assert:
+        that:
+          - a_record_update_idempotent is changed
+          - a_record_update_idempotent is not failed
+
+      # Delete the A Record (check mode)
+    - name: Delete the A Record (check mode)
+      infoblox.bloxone.dns_record:
+        zone: "{{ _auth_zone.id }}"
+        name_in_zone: "{{ record_name }}"
+        rdata:
+          address: "192.168.10.20"
+        type: A
+        state: absent
+      check_mode: true
+      register: a_record
+    - name: Get information about the A Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          name_in_zone: "{{ record_name }}"
+          type: A
+      register: a_record_info
+    - assert:
+        that:
+          - a_record is changed
+          - a_record is not failed
+          - a_record_info.objects | length == 1
+
+    # Delete the A Record
+    - name: Delete the A Record
+      infoblox.bloxone.dns_record:
+        zone: "{{ _auth_zone.id }}"
+        name_in_zone: "{{ record_name }}"
+        rdata:
+          address: "192.168.10.20"
+        type: A
+        state: absent
+      register: a_record
+    - name: Get information about the A Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+            name_in_zone: "{{ record_name }}"
+            type: A
+      register: a_record_info
+    - assert:
+        that:
+          - a_record is not failed
+          - a_record_info.objects | length == 0
+
+    # Delete the A Record (idempotency check)
+    - name: Delete the A Record (idempotent)
+      infoblox.bloxone.dns_record:
+        zone: "{{ _auth_zone.id }}"
+        name_in_zone: "{{ record_name }}"
+        rdata:
+          address: "192.168.10.20"
+        type: A
+        state: absent
+      register: a_record
+    - name: Get information about the A Record (idempotent)
+      infoblox.bloxone.dns_record_info:
+        filters:
+            name_in_zone: "{{ record_name }}"
+            type: A
+      register: a_record_info
+    - assert:
+        that:
+          - a_record is not changed
+          - a_record is not failed
+
+    - name: Create DNS A Record with comment
+      infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
+        zone: "{{ _auth_zone.id }}"
+        rdata:
+          address: "1.2.3.4"
+        type: A
+        comment: "This is a test A Record"
+        state: present
+      register: a_record
+    - name: Get information about the A Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          name_in_zone: "{{ record_name }}"
+          type: A
+      register: a_record_info
+    - assert:
+        that:
+          - a_record is not failed
+          - a_record_info.objects | length == 1
+          - a_record_info.objects[0].id == a_record.id
+          - a_record_info.objects[0].comment == "This is a test A Record"
+
+
+    - name: Create DNS A Record with TTL
+      infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
+        zone: "{{ _auth_zone.id }}"
+        rdata:
+          address: "1.2.3.4"
+        type: A
+        ttl: 3600
+        state: present
+      register: a_record
+    - name: Get information about the A Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          name_in_zone: "{{ record_name }}"
+          type: A
+      register: a_record_info
+    - assert:
+        that:
+          - a_record is not failed
+          - a_record_info.objects | length == 1
+          - a_record_info.objects[0].id == a_record.id
+          - a_record_info.objects[0].ttl == 3600
+
+    - name: Create DNS A Record with Disabled
+      infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
+        zone: "{{ _auth_zone.id }}"
+        rdata:
+          address: "1.2.3.4"
+        type: A
+        disabled: true
+        state: present
+      register: a_record
+    - name: Get information about the A Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          name_in_zone: "{{ record_name }}"
+          type: A
+      register: a_record_info
+    - assert:
+        that:
+          - a_record is not failed
+          - a_record_info.objects | length == 1
+          - a_record_info.objects[0].id == a_record.id
+          - a_record_info.objects[0].disabled == true
+
+    - name: Create DNS A Record with Tags
+      infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
+        zone: "{{ _auth_zone.id }}" #Updated the update payload as fatal: [testhost]: FAILED! => {"changed": false, "msg": "Failed to execute command: 400 Bad Request {\"error\":[{\"message\":\"The 'Zone' field is read-only and cannot be updated.\"}]}"}
+        rdata:
+          address: "1.2.3.4"
+        type: A
+        tags:
+          location: "site-1"
+        state: present
+      register: a_record
+    - name: Get information about the A Record
+      infoblox.bloxone.dns_record_info:
+          filters:
+            name_in_zone: "{{ record_name }}"
+            type: A
+      register: a_record_info
+    - assert:
+        that:
+          - a_record is not failed
+          - a_record_info.objects | length == 1
+          - a_record_info.objects[0].id == a_record.id
+          - a_record_info.objects[0].tags.location == "site-1"
+
+
+    - name: Create DNS A Record with Inheritance Options
+      infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
+        zone: "{{ _auth_zone.id }}"
+        rdata:
+          address: "10.0.0.1"
+        type: A
+        inheritance_sources:
+          ttl:
+            action: "inherit"
+            #source:   #"Does not accept source"
+        state: present
+      register: a_record
+    - name: Get DNS A Record information
+      infoblox.bloxone.dns_record_info:
+        filters:
+          name_in_zone: "{{ record_name }}"
+          type: A
+      register: a_record_info
+
+    - assert:
+        that:
+          - a_record is not failed
+          - a_record_info.objects | length == 1
+          - a_record_info.objects[0].id == a_record.id
+          - a_record_info.objects[0].inheritance_sources.ttl.action == "inherit"
+
+
+  always:
+     - name: "Clean up Authorization Zone"
+       infoblox.bloxone.dns_auth_zone:
+         fqdn: "{{ fqdn }}"
+         state: absent
+       ignore_errors: true
+
+     - name: "Clean up DNS View"
+       infoblox.bloxone.dns_view:
+         name: "{{ _view.id }}"
+         state: absent
+       ignore_errors: true

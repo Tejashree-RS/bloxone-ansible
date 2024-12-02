@@ -126,6 +126,24 @@ extends_documentation_fragment:
     - infoblox.bloxone.common
 """  # noqa: E501
 
+EXAMPLES = r"""
+    - name: Create a DNS record
+      infoblox.bloxone.dns_record:
+        zone: "example.com"
+        name_in_zone: "test"
+        type: "A"
+        rdata:  
+            address: "192.168.0.0"
+        state: "present"
+
+    - name: Delete a DNS record
+      infoblox.bloxone.dns_record:
+        zone: "example.com"
+        name_in_zone: "test"
+        type: "A"
+        state: "absent"
+"""  # noqa: E501
+
 RETURN = r"""
 id:
     description:
@@ -386,7 +404,17 @@ class RecordModule(BloxoneAnsibleModule):
                     return None
                 raise e
         else:
-            filter = f"name=='{self.params['name']}' and view=='{self.params['view']}'"
+
+            #filter = f"rdata=='{self.params['rdata']}' and type=='{self.params['type']}'"
+            filter = f"name_in_zone=='{self.params['name_in_zone']}' and type=='{self.params['type']}'"
+            #filter = f"absolute_name_spec=='{self.params['absolute_name_spec']}' and type=='{self.params['type']}'"
+
+            # Ensure Zone or (ANS + View) validation
+            if self.params.get("zone") is None and self.params.get("absolute_name_spec") is None:
+                 return self.fail_json(msg="Either Zone or (ANS + View) is required to create a record")
+            if self.params.get("absolute_name_spec") is not None and self.params.get("view") is None:
+                 return self.fail_json(msg="Either Zone or (ANS + View) is required to create a record")
+
             resp = RecordApi(self.client).list(filter=filter, inherit="full")
             if len(resp.results) == 1:
                 return resp.results[0]
@@ -394,6 +422,55 @@ class RecordModule(BloxoneAnsibleModule):
                 self.fail_json(msg=f"Found multiple Record: {resp.results}")
             if len(resp.results) == 0:
                 return None
+
+    # def find(self):
+    #     if self.params["id"] is not None:
+    #         try:
+    #             resp = RecordApi(self.client).read(self.params["id"], inherit="full")
+    #             return resp.result
+    #         except NotFoundException as e:
+    #             if self.params["state"] == "absent":
+    #                 return None
+    #             raise e
+    #     else:
+    #         # Ensure Zone or (ANS + View) validation
+    #         if self.params.get("zone") is None and self.params.get("absolute_name_spec") is None:
+    #             return self.fail_json(msg="Either Zone or (ANS + View) is required to create a record")
+    #         if self.params.get("absolute_name_spec") is not None and self.params.get("view") is None:
+    #             return self.fail_json(msg="Either Zone or (ANS + View) is required to create a record")
+    #
+    #         records = []
+    #
+    #         # Case 1: Zone fqdn + type & rdata
+    #         if self.params.get("zone"):
+    #             filter = f"zone=='{self.params['zone']}' and type=='{self.params['type']}'"
+    #             resp = RecordApi(self.client).list(filter=filter, inherit="full")
+    #             records = [rec for rec in resp.results if rec['rdata']['address'] == self.params['rdata']['address']]
+    #
+    #             if self.params.get("view"):
+    #                 records = [rec for rec in records if rec['view'] == self.params['view']]
+    #             else:
+    #
+    #                 default_view_id = "dns/view/9e6ffba9-cf90-44ab-aef4-10b579de44a9"
+    #                 zone_check_filter = f"zone=='{self.params['zone']}' and view=='{default_view_id}'"
+    #                 zone_resp = RecordApi(self.client).list(filter=zone_check_filter, inherit="full")
+    #                 if not zone_resp.results:
+    #                     return self.fail_json(msg="Zone not present in default view")
+    #
+    #         # Case 2: ANS + view & address & type
+    #         elif self.params.get("absolute_name_spec") and self.params.get("view"):
+    #             filter = f"view=='{self.params['view']}' and type=='{self.params['type']}'"
+    #             resp = RecordApi(self.client).list(filter=filter, inherit="full")
+    #             records = [rec for rec in resp.results if rec['rdata']['address'] == self.params['rdata']['address']]
+    #
+    #             records = [rec for rec in records if rec['absolute_name_spec'] == self.params['absolute_name_spec']]
+    #
+    #         if len(records) == 1:
+    #             return records[0]
+    #         elif len(records) > 1:
+    #             self.fail_json(msg=f"Found multiple Records: {records}")
+    #         else:
+    #             return None
 
     def create(self):
         if self.check_mode:
@@ -405,6 +482,9 @@ class RecordModule(BloxoneAnsibleModule):
     def update(self):
         if self.check_mode:
             return None
+
+        update_body = self.payload
+        update_body = self.validate_readonly_on_update(self.existing, update_body, ["type", "name_in_zone", "zone"])
 
         resp = RecordApi(self.client).update(id=self.existing.id, body=self.payload, inherit="full")
         return resp.result.model_dump(by_alias=True, exclude_none=True)
@@ -456,6 +536,7 @@ class RecordModule(BloxoneAnsibleModule):
 def main():
     module_args = dict(
         id=dict(type="str", required=False),
+        absolute_name_spec=dict(type="str"),
         state=dict(type="str", required=False, choices=["present", "absent"], default="present"),
         comment=dict(type="str"),
         disabled=dict(type="bool"),
@@ -478,7 +559,7 @@ def main():
     module = RecordModule(
         argument_spec=module_args,
         supports_check_mode=True,
-        required_if=[("state", "present", ["name", "view"])],
+        required_if=[("state", "present", ["rdata", "type"])],
     )
 
     module.run_command()

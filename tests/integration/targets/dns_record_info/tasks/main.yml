@@ -1,0 +1,80 @@
+---
+- module_defaults:
+    group/infoblox.bloxone.all:
+      csp_url: "{{ csp_url }}"
+      api_key: "{{ api_key }}"
+  block:
+    # Create a random DNS record name to avoid conflicts
+    - ansible.builtin.set_fact:
+        fqdn: "test-auth-zone-{{ 999999 | random | string }}.com."
+        record_name: "test-record-{{ 999999 | random | string }}"
+        tag_value: "site-{{ 999999 | random | string }}"
+
+    # Basic Test for DNS Record
+    - name : Create an Auth Zone
+      infoblox.bloxone.dns_auth_zone:
+       fqdn: "{{ fqdn }}"
+       primary_type: cloud
+       state: present
+      register: auth_zone
+
+    - name: Create a DNS Record
+      infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
+        zone: "{{ auth_zone.id }}"
+        rdata:
+          address: "10.0.0.1"
+        type: A
+        tags:
+          location: "{{ tag_value }}"
+        state: present
+      register: dns_record
+
+    - name: Get Information about the DNS Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          name_in_zone: "{{ record_name }}"
+      register: dns_record_info
+    - assert:
+        that:
+          - dns_record_info.objects | length == 1
+          - dns_record_info.objects[0].name_in_zone == dns_record.object.name_in_zone
+
+    - name: Get DNS Record information by filters (name_in_zone)
+      infoblox.bloxone.dns_record_info:
+        filters:
+          name_in_zone: "{{ record_name }}"
+      register: dns_record_info
+    - assert:
+        that:
+          - dns_record_info.objects | length == 1
+          - dns_record_info.objects[0].id == dns_record.id
+
+    - name: Get DNS Record information by filter query
+      infoblox.bloxone.dns_record_info:
+        filter_query: "name_in_zone=='{{ record_name }}'"
+    - assert:
+        that:
+          - dns_record_info.objects | length == 1
+          - dns_record_info.objects[0].id == dns_record.id
+
+    - name: Get DNS Record information by tag filters
+      infoblox.bloxone.dns_record_info:
+        tag_filters:
+          location: "{{ tag_value }}"
+    - assert:
+        that:
+          - dns_record_info.objects | length == 1
+          - dns_record_info.objects[0].id == dns_record.id
+
+  always:
+    # Cleanup if the test fails
+    - name: "Delete DNS Record"
+      infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
+        zone: "{{ auth_zone.id }}"
+        rdata:
+            address: "10.0.0.1"
+        type: A
+        state: "absent"
+      ignore_errors: true
