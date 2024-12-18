@@ -4,7 +4,7 @@
       csp_url: "{{ csp_url }}"
       api_key: "{{ api_key }}"
   block:
-    # Create a random DNS A record name to avoid conflicts
+    # Create a random A record name to avoid conflicts
     - ansible.builtin.set_fact:
         record_name: "test-a-record-{{ 999999 | random | string }}"
         tag_value: "site-{{ 999999 | random | string }}"
