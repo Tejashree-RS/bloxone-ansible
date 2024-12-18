@@ -56,6 +56,47 @@ extends_documentation_fragment:
     - infoblox.bloxone.common
 """  # noqa: E501
 
+EXAMPLES = r"""
+  - name: Get DNS A Record information by ID
+    infoblox.bloxone.a_record_info:
+      id: "{{ a_record_id }}"
+
+  - name: Get DNS A Record information by filters (e.g., name_in_zone)
+    infoblox.bloxone.a_record_info:
+      filters:
+        name_in_zone: "example_a_record"
+        type: "A"
+
+  - name: Get DNS A Record information by raw filter query
+    infoblox.bloxone.a_record_info:
+      filter_query: "name_in_zone=='example_a_record' and type=='A'"
+
+  - name: Get DNS A Record information by filters (zone)
+    infoblox.bloxone.a_record_info:
+      filters:
+        zone: "example_zone_id"
+        type: "A"
+
+  - name: Get DNS A Record information by filter query for zone
+    infoblox.bloxone.a_record_info:
+      filter_query: "zone=='example_zone_id' and type=='A'"
+
+  - name: Get DNS A Record information by filters (absolute_name_spec)
+    infoblox.bloxone.a_record_info:
+      filters:
+        absolute_name_spec: "example_a_record.example.com"
+        type: "A"
+
+  - name: Get DNS A Record information by filter query for absolute_name_spec
+    infoblox.bloxone.a_record_info:
+      filter_query: "absolute_name_spec=='example_a_record.example.com' and type=='A'"
+
+  - name: Get DNS A Record information by tag filters
+    infoblox.bloxone.a_record_info:
+      tag_filters:
+        location: "site-1"
+"""  # noqa: E501
+
 RETURN = r"""
 id:
     description:
@@ -359,6 +400,7 @@ def main():
         ],
     )
     module.run_command()
+
 
 if __name__ == "__main__":
     main()

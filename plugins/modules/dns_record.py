@@ -30,6 +30,10 @@ options:
             - present
             - absent
         default: present
+    absolute_name_spec:
+        description:
+            - "Synthetic field, used to determine I(zone) and/or I(name_in_zone) field for records."
+        type: str        
     comment:
         description:
             - "The description for the DNS resource record. May contain 0 to 1024 characters. Can include UTF-8."
@@ -99,6 +103,7 @@ options:
             - "Subfield | Description                         | Required ---------|-------------------------------------|--------- text     | The semantics of the text depends on the domain where it is found.<br><br> | No"
             - "Generic record can be used to represent any DNS resource record not listed above. Subfields for a generic record consist of a list of struct subfields, each having the following sub-subfields: Sub-subfield | Description                        | Required -------------|------------------------------------|--------- type         | Following types are supported:<ul><li>I(8BIT): Unsigned 8-bit integer. </li><li> I(16BIT): Unsigned 16-bit integer. </li><li> I(32BIT): Unsigned 32-bit integer. </li><li> I(IPV6): IPv6 address. For example, \"abcd:123::abcd\". </li><li> I(IPV4): IPv4 address. For example, \"1.1.1.1\". </li><li> I(DomainName): Domain name (absolute or relative). </li><li> I(TEXT): ASCII text. </li><li> I(BASE64): Base64 encoded binary data. </li><li> I(HEX): Hex encoded binary data. </li><li>I(PRESENTATION): Presentation is a standard textual form of record data, as shown in a standard master zone file. <br><br> For example, an IPSEC RDATA could be specified using the PRESENTATION type field whose value is \"10 1 2 192.0.2.38 AQNRU3mG7TVTO2BkR47usntb102uFJtugbo6BSGvgqt4AQ==\", instead of a sequence of the following subfields: <ul><li> 8BIT: value=10 </li><li> 8BIT: value=1 </li><li> 8BIT: value=2 </li><li> IPV4: value=\"192.0.2.38\" </li><li> BASE64 (without I(length_kind) sub-subfield): value=\"AQNRU3mG7TVTO2BkR47usntb102uFJtugbo6BSGvgqt4AQ==\" </li></ul></li></ul>If type is I(PRESENTATION), only one struct subfield can be specified. <br><br> | Yes length_kind  | A string indicating the size in bits of a sub-subfield that is prepended to the value and encodes the length of the value. Valid values are:<ul><li>I(8): If I(type) is I(ASCII) or I(BASE64). </li><li>I(16): If I(type) is I(HEX).</li></ul>Defaults to none. <br><br>| Only required for some types. value        | A string representing the value for the sub-subfield | Yes"
         type: dict
+        required: true
     tags:
         description:
             - "The tags for the DNS resource record in JSON format."
@@ -113,6 +118,7 @@ options:
             - "The DNS resource record type specified in the textual mnemonic format or in the \"TYPEnnn\" format where \"nnn\" indicates the numeric type value."
             - "Value  | Numeric Type | Description -------|--------------|--------------------------------------------- A      | 1            | Address record AAAA   | 28           | IPv6 Address record CAA    | 257          | Certification Authority Authorization record CNAME  | 5            | Canonical Name record DNAME  | 39           | Delegation Name record DHCID  | 49           | DHCP Identifier record MX     | 15           | Mail Exchanger record NAPTR  | 35           | Naming Authority Pointer record NS     | 2            | Name Server record PTR    | 12           | Pointer record SOA    | 6            | Start of Authority record SRV    | 33           | Service record TXT    | 16           | Text record IBMETA | 65536        | Infoblox meta records, not valid for DNS protocol (read-only)"
         type: str
+        required: true
     view:
         description:
             - "The resource identifier."
@@ -127,19 +133,55 @@ extends_documentation_fragment:
 """  # noqa: E501
 
 EXAMPLES = r"""
-    - name: Create a DNS record
-      infoblox.bloxone.dns_record:
-        zone: "example.com"
-        name_in_zone: "test"
-        type: "A"
-        rdata:  
-            address: "192.168.0.0"
+    - name: Create an Auth Zone (required as parent) 
+      infoblox.bloxone.dns_auth_zone:
+        fqdn: "example_zone"
+        primary_type: cloud
         state: "present"
-
-    - name: Delete a DNS record
+    
+    - name: Create an A Record with only the zone without name in zone
       infoblox.bloxone.dns_record:
-        zone: "example.com"
-        name_in_zone: "test"
+        zone: "example_zone"
+        comment: "Example A Record"
+        rdata:
+            address: "192.168.10.10"
+        type: "A"
+        state: "present"        
+        
+    - name: Create an A Record with NIZ and Zone
+      infoblox.bloxone.dns_record:
+        zone: "example_zone"
+        name_in_zone: "example_a_record"
+        comment: "Example A Record"
+        ttl: 3600
+        disabled: true
+        rdata:  
+            address: "192.168.10.10"
+        type: "A"
+        tags:
+            location: "site-1"
+        state: "present"
+        
+    - name: Create an A Record with ANS and View
+      infoblox.bloxone.dns_record:
+        absolute_name_spec: "example_a_record.example_zone"
+        view: "example_view"
+        comment: "Example A Record"
+        ttl: 3600
+        inheritance_sources:
+            ttl:
+                action: "inherit"
+        rdata:
+            address: "192.168.10.10"
+        type: "A"
+        state: "present"          
+                   
+    - name: Delete the A Record
+      infoblox.bloxone.dns_record:
+        zone: "example_zone"
+        name_in_zone: "example_a_record"
+        rdata:
+            address: "192.168.10.10"
         type: "A"
         state: "absent"
 """  # noqa: E501
@@ -404,73 +446,60 @@ class RecordModule(BloxoneAnsibleModule):
                     return None
                 raise e
         else:
+            if self.params["zone"] is not None:
+                filter = f"zone=='{self.params['zone']}' and type=='{self.params['type']}'"
+                resp = RecordApi(self.client).list(filter=filter, inherit="full")
 
-            #filter = f"rdata=='{self.params['rdata']}' and type=='{self.params['type']}'"
-            filter = f"name_in_zone=='{self.params['name_in_zone']}' and type=='{self.params['type']}'"
-            #filter = f"absolute_name_spec=='{self.params['absolute_name_spec']}' and type=='{self.params['type']}'"
+                # self.fail_json(msg=f"Found multiple Record: {resp.results}")
 
-            # Ensure Zone or (ANS + View) validation
-            if self.params.get("zone") is None and self.params.get("absolute_name_spec") is None:
-                 return self.fail_json(msg="Either Zone or (ANS + View) is required to create a record")
-            if self.params.get("absolute_name_spec") is not None and self.params.get("view") is None:
-                 return self.fail_json(msg="Either Zone or (ANS + View) is required to create a record")
+                if len(resp.results) == 1:
+                    return resp.results[0]
+                if len(resp.results) == 0:
+                    return None
 
-            resp = RecordApi(self.client).list(filter=filter, inherit="full")
-            if len(resp.results) == 1:
-                return resp.results[0]
-            if len(resp.results) > 1:
-                self.fail_json(msg=f"Found multiple Record: {resp.results}")
-            if len(resp.results) == 0:
-                return None
+                for i in resp.results:
+                    if i["address"] != self.params["address"]:
+                        resp.results.pop(i)
 
-    # def find(self):
-    #     if self.params["id"] is not None:
-    #         try:
-    #             resp = RecordApi(self.client).read(self.params["id"], inherit="full")
-    #             return resp.result
-    #         except NotFoundException as e:
-    #             if self.params["state"] == "absent":
-    #                 return None
-    #             raise e
-    #     else:
-    #         # Ensure Zone or (ANS + View) validation
-    #         if self.params.get("zone") is None and self.params.get("absolute_name_spec") is None:
-    #             return self.fail_json(msg="Either Zone or (ANS + View) is required to create a record")
-    #         if self.params.get("absolute_name_spec") is not None and self.params.get("view") is None:
-    #             return self.fail_json(msg="Either Zone or (ANS + View) is required to create a record")
-    #
-    #         records = []
-    #
-    #         # Case 1: Zone fqdn + type & rdata
-    #         if self.params.get("zone"):
-    #             filter = f"zone=='{self.params['zone']}' and type=='{self.params['type']}'"
-    #             resp = RecordApi(self.client).list(filter=filter, inherit="full")
-    #             records = [rec for rec in resp.results if rec['rdata']['address'] == self.params['rdata']['address']]
-    #
-    #             if self.params.get("view"):
-    #                 records = [rec for rec in records if rec['view'] == self.params['view']]
-    #             else:
-    #
-    #                 default_view_id = "dns/view/9e6ffba9-cf90-44ab-aef4-10b579de44a9"
-    #                 zone_check_filter = f"zone=='{self.params['zone']}' and view=='{default_view_id}'"
-    #                 zone_resp = RecordApi(self.client).list(filter=zone_check_filter, inherit="full")
-    #                 if not zone_resp.results:
-    #                     return self.fail_json(msg="Zone not present in default view")
-    #
-    #         # Case 2: ANS + view & address & type
-    #         elif self.params.get("absolute_name_spec") and self.params.get("view"):
-    #             filter = f"view=='{self.params['view']}' and type=='{self.params['type']}'"
-    #             resp = RecordApi(self.client).list(filter=filter, inherit="full")
-    #             records = [rec for rec in resp.results if rec['rdata']['address'] == self.params['rdata']['address']]
-    #
-    #             records = [rec for rec in records if rec['absolute_name_spec'] == self.params['absolute_name_spec']]
-    #
-    #         if len(records) == 1:
-    #             return records[0]
-    #         elif len(records) > 1:
-    #             self.fail_json(msg=f"Found multiple Records: {records}")
-    #         else:
-    #             return None
+                if len(resp.results) == 1:
+                    return resp.results[0]
+                if len(resp.results) > 1:
+                    self.fail_json(msg=f"Found multiple Record: {resp.results}")
+                if len(resp.results) == 0:
+                    return None
+
+            elif self.params["absolute_name_spec"] is not None:
+
+                filter = f"absolute_name_spec=='{self.params['absolute_name_spec']}' and type=='{self.params['type']}'"
+                resp = RecordApi(self.client).list(filter=filter, inherit="full")
+
+                # self.fail_json(msg=f"Found multiple Record: {resp.results}")
+
+                if len(resp.results) == 1:
+                    return resp.results[0]
+                if len(resp.results) == 0:
+                    return None
+
+                for i in resp.results:
+                    if i["address"] != self.params["address"]:
+                        resp.results.pop(i)
+
+                if len(resp.results) == 1:
+                    return resp.results[0]
+
+                for i in resp.results:
+                    if i["view"] != self.params["view"]:
+                        resp.results.pop(i)
+
+                if len(resp.results) == 1:
+                    return resp.results[0]
+                if len(resp.results) > 1:
+                    self.fail_json(msg=f"Found multiple Record: {resp.results}")
+                if len(resp.results) == 0:
+                    return None
+
+            else:
+                return self.fail_json(msg="Either Zone or ANS or Name in Zone is required to create a record")
 
     def create(self):
         if self.check_mode:
@@ -484,7 +513,7 @@ class RecordModule(BloxoneAnsibleModule):
             return None
 
         update_body = self.payload
-        update_body = self.validate_readonly_on_update(self.existing, update_body, ["type", "name_in_zone", "zone"])
+        update_body = self.validate_readonly_on_update(self.existing, update_body, ["type", "zone"])
 
         resp = RecordApi(self.client).update(id=self.existing.id, body=self.payload, inherit="full")
         return resp.result.model_dump(by_alias=True, exclude_none=True)
@@ -526,7 +555,9 @@ class RecordModule(BloxoneAnsibleModule):
                 after=item,
             )
             result["object"] = item
-            result["id"] = self.existing.id if self.existing is not None else item["id"] if (item and "id" in item) else None
+            result["id"] = (
+                self.existing.id if self.existing is not None else item["id"] if (item and "id" in item) else None
+            )
         except ApiException as e:
             self.fail_json(msg=f"Failed to execute command: {e.status} {e.reason} {e.body}")
 
@@ -540,20 +571,25 @@ def main():
         state=dict(type="str", required=False, choices=["present", "absent"], default="present"),
         comment=dict(type="str"),
         disabled=dict(type="bool"),
-        inheritance_sources=dict(type="dict", options=dict(
-            ttl=dict(type="dict", options=dict(
-                action=dict(type="str"),
-            )),
-        )),
+        inheritance_sources=dict(
+            type="dict",
+            options=dict(
+                ttl=dict(
+                    type="dict",
+                    options=dict(
+                        action=dict(type="str"),
+                    ),
+                ),
+            ),
+        ),
         name_in_zone=dict(type="str"),
         options=dict(type="dict"),
-        rdata=dict(type="dict"),
+        rdata=dict(type="dict", required=True),
         tags=dict(type="dict"),
         ttl=dict(type="int"),
-        type=dict(type="str"),
+        type=dict(type="str", required=True),
         view=dict(type="str"),
         zone=dict(type="str"),
-
     )
 
     module = RecordModule(
