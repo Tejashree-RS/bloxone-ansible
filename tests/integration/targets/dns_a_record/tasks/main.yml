@@ -219,7 +219,6 @@
           - a_record_info.objects[0].id == a_record.id
           - a_record_info.objects[0].tags.location == "site-1"
 
-
     - name: Create an A Record with Inheritance Sources
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
@@ -237,7 +236,6 @@
           zone: "{{ _auth_zone.id }}"
           type: "A"
       register: a_record_info
-
     - assert:
         that:
           - a_record_info is not failed
@@ -267,10 +265,6 @@
           - a_record_info is not failed
           - a_record_info.objects | length == 1
           - a_record_info.objects[0].id == a_record.id
-#          - a_record_info.objects[0].options.create_ptr == "true"
-#          - a_record_info.objects[0].options.check_rmz == "true"
-#         ERROR: "The conditional check 'a_record_info.objects[0].options.create_ptr == \"true\"' failed.
-#         The error was: error while evaluating conditional (a_record_info.objects[0].options.create_ptr == \"true\"): 'dict object' has no attribute 'options'"}
 
     # Create an A record with NIZ and Zone
     - name: Create an A Record with Name in Zone and Zone
@@ -336,7 +330,6 @@
           - a_record_info.objects[0].name_in_zone == a_record.object.name_in_zone
           - a_record_info.objects[0].zone == a_record.object.zone
 
-
   always:
      - name: "Delete the A Record"
        infoblox.bloxone.dns_record:
@@ -363,4 +356,3 @@
          name: "{{ name }}"
          state: absent
        ignore_errors: true
-
