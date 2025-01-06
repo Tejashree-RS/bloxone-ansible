@@ -136,7 +136,7 @@ EXAMPLES = r"""
     - name: Create an Auth Zone (required as parent) 
       infoblox.bloxone.dns_auth_zone:
         fqdn: "example_zone"
-        primary_type: cloud
+        primary_type: "cloud"
         state: "present"
     
     - name: Create an A Record with only the zone without name in zone
