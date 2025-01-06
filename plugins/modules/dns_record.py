@@ -138,7 +138,7 @@ EXAMPLES = r"""
         fqdn: "example_zone"
         primary_type: "cloud"
         state: "present"
-        register: _auth_zone
+      register: _auth_zone
     
     - name: Create an A Record in an Auth Zone
       infoblox.bloxone.dns_record:
