@@ -45,11 +45,11 @@ options:
         type: bool
     inheritance_sources:
         description:
-            - "The inheritance configuration."
+            - "The inheritance configuration specifies how the Record object inherits the ttl field"
         type: dict
         suboptions:
             ttl:
-                description: ""
+                description: "The inheritance configuration for a field of type UInt32."
                 type: dict
                 suboptions:
                     action:
@@ -136,21 +136,22 @@ EXAMPLES = r"""
     - name: Create an Auth Zone (required as parent) 
       infoblox.bloxone.dns_auth_zone:
         fqdn: "example_zone"
-        primary_type: cloud
+        primary_type: "cloud"
         state: "present"
+        register: _auth_zone
     
-    - name: Create an A Record with only the zone without name in zone
+    - name: Create an A Record in an Auth Zone
       infoblox.bloxone.dns_record:
-        zone: "example_zone"
+        zone: "{{ _auth_zone.id }}"
         comment: "Example A Record"
         rdata:
             address: "192.168.10.10"
         type: "A"
         state: "present"        
         
-    - name: Create an A Record with NIZ and Zone
+    - name: Create an A Record with Name in Zone and Zone
       infoblox.bloxone.dns_record:
-        zone: "example_zone"
+        zone: "{{ _auth_zone.id }}"
         name_in_zone: "example_a_record"
         comment: "Example A Record"
         ttl: 3600
@@ -162,7 +163,7 @@ EXAMPLES = r"""
             location: "site-1"
         state: "present"
         
-    - name: Create an A Record with ANS and View
+    - name: Create an A Record with Absolute Name Spec and View
       infoblox.bloxone.dns_record:
         absolute_name_spec: "example_a_record.example_zone"
         view: "example_view"
@@ -178,7 +179,7 @@ EXAMPLES = r"""
                    
     - name: Delete the A Record
       infoblox.bloxone.dns_record:
-        zone: "example_zone"
+        zone: "{{ _auth_zone.id }}"
         name_in_zone: "example_a_record"
         rdata:
             address: "192.168.10.10"
@@ -256,12 +257,12 @@ item:
             returned: Always
         inheritance_sources:
             description:
-                - "The inheritance configuration."
+                - "The inheritance configuration specifies how the Record object inherits the ttl field."
             type: dict
             returned: Always
             contains:
                 ttl:
-                    description: ""
+                    description: "The inheritance configuration for a field of type UInt32."
                     type: dict
                     returned: Always
                     contains:
@@ -473,8 +474,6 @@ class RecordModule(BloxoneAnsibleModule):
                 filter = f"absolute_name_spec=='{self.params['absolute_name_spec']}' and type=='{self.params['type']}'"
                 resp = RecordApi(self.client).list(filter=filter, inherit="full")
 
-                # self.fail_json(msg=f"Found multiple Record: {resp.results}")
-
                 if len(resp.results) == 1:
                     return resp.results[0]
                 if len(resp.results) == 0:
@@ -499,7 +498,9 @@ class RecordModule(BloxoneAnsibleModule):
                     return None
 
             else:
-                return self.fail_json(msg="Either Zone or ANS or Name in Zone is required to create a record")
+                return self.fail_json(
+                    msg="Either Zone or Name in Zone and Zone or Absolute Name Spec and View is required to create a record"
+                )
 
     def create(self):
         if self.check_mode:
