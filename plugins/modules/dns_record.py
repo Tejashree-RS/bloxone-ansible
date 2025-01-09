@@ -437,6 +437,14 @@ class RecordModule(BloxoneAnsibleModule):
 
         return self.is_changed(self.existing.model_dump(by_alias=True, exclude_none=True), self.payload_params)
 
+    def get_single_result_or_none(self, results):
+        if len(results) == 1:
+            return results[0]
+        elif len(results) == 0:
+            return None
+        else:
+            self.fail_json(msg=f"Found multiple records: {results}")
+
     def find(self):
         if self.params["id"] is not None:
             try:
@@ -450,57 +458,28 @@ class RecordModule(BloxoneAnsibleModule):
             if self.params["zone"] is not None:
                 filter = f"zone=='{self.params['zone']}' and type=='{self.params['type']}'"
                 resp = RecordApi(self.client).list(filter=filter, inherit="full")
-
-                # self.fail_json(msg=f"Found multiple Record: {resp.results}")
-
-                if len(resp.results) == 1:
-                    return resp.results[0]
-                if len(resp.results) == 0:
-                    return None
-
-                for i in resp.results:
-                    if i["address"] != self.params["address"]:
-                        resp.results.pop(i)
-
-                if len(resp.results) == 1:
-                    return resp.results[0]
-                if len(resp.results) > 1:
-                    self.fail_json(msg=f"Found multiple Record: {resp.results}")
-                if len(resp.results) == 0:
-                    return None
-
             elif self.params["absolute_name_spec"] is not None:
-
                 filter = f"absolute_name_spec=='{self.params['absolute_name_spec']}' and type=='{self.params['type']}'"
                 resp = RecordApi(self.client).list(filter=filter, inherit="full")
-
-                if len(resp.results) == 1:
-                    return resp.results[0]
-                if len(resp.results) == 0:
-                    return None
-
-                for i in resp.results:
-                    if i["address"] != self.params["address"]:
-                        resp.results.pop(i)
-
-                if len(resp.results) == 1:
-                    return resp.results[0]
-
-                for i in resp.results:
-                    if i["view"] != self.params["view"]:
-                        resp.results.pop(i)
-
-                if len(resp.results) == 1:
-                    return resp.results[0]
-                if len(resp.results) > 1:
-                    self.fail_json(msg=f"Found multiple Record: {resp.results}")
-                if len(resp.results) == 0:
-                    return None
-
             else:
                 return self.fail_json(
                     msg="Either Zone or Name in Zone and Zone or Absolute Name Spec and View is required to create a record"
                 )
+
+            result = self.get_single_result_or_none(resp.results)
+
+            if result:
+                return result
+
+            if self.params.get("address"):
+                resp.results = [r for r in resp.results if r["address"] == self.params["address"]]
+                result = self.get_single_result_or_none(resp.results)
+                if result:
+                    return result
+
+            if self.params.get("view"):
+                resp.results = [r for r in resp.results if r["view"] == self.params["view"]]
+                return self.get_single_result_or_none(resp.results)
 
     def create(self):
         if self.check_mode:
@@ -516,7 +495,10 @@ class RecordModule(BloxoneAnsibleModule):
         update_body = self.payload
         update_body = self.validate_readonly_on_update(self.existing, update_body, ["type", "zone"])
 
-        resp = RecordApi(self.client).update(id=self.existing.id, body=self.payload, inherit="full")
+        if getattr(update_body, "view") is not None:
+            update_body = self.validate_readonly_on_update(self.existing, update_body, ["type", "zone", "view"])
+
+        resp = RecordApi(self.client).update(id=self.existing.id, body=update_body, inherit="full")
         return resp.result.model_dump(by_alias=True, exclude_none=True)
 
     def delete(self):
