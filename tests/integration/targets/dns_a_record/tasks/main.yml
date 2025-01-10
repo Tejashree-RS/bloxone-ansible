@@ -338,10 +338,9 @@
        ignore_errors: true
 
      - name: "Delete the Reverse Mapping Zone"
-       infoblox.bloxone.dns_auth_zone:
-         fqdn: "0.0.20.in-addr.arpa."
-         state: absent
-       ignore_errors: true
+       ansible.builtin.include_role:
+         name: setup_auth_zone_rmz
+         tasks_from: cleanup.yml
 
      - name: "Delete the View"
        infoblox.bloxone.dns_view:
