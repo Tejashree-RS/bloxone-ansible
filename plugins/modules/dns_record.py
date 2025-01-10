@@ -45,11 +45,11 @@ options:
         type: bool
     inheritance_sources:
         description:
-            - "The inheritance configuration specifies how the Record object inherits the ttl field"
+            - "The inheritance configuration of the Record"
         type: dict
         suboptions:
             ttl:
-                description: "The inheritance configuration for a field of type UInt32."
+                description: "The TTL inheritance settings for the record. If not set, the record will inherit the TTL from the zone."
                 type: dict
                 suboptions:
                     action:
@@ -162,11 +162,17 @@ EXAMPLES = r"""
         tags:
             location: "site-1"
         state: "present"
+    
+    - name: Create a View (required as parent)
+      infoblox.bloxone.dns_view:
+        name: "{{ dns_view_name }}"
+        state: present
+      register: _view   
         
     - name: Create an A Record with Absolute Name Spec and View
       infoblox.bloxone.dns_record:
         absolute_name_spec: "example_a_record.example_zone"
-        view: "example_view"
+        view: "{{ _view.id }}"
         comment: "Example A Record"
         ttl: 3600
         inheritance_sources:
@@ -257,12 +263,12 @@ item:
             returned: Always
         inheritance_sources:
             description:
-                - "The inheritance configuration specifies how the Record object inherits the ttl field."
+                - "The inheritance configuration of the Record"
             type: dict
             returned: Always
             contains:
                 ttl:
-                    description: "The inheritance configuration for a field of type UInt32."
+                    description: "The TTL inheritance settings for the record. If not set, the record will inherit the TTL from the zone."
                     type: dict
                     returned: Always
                     contains:
@@ -496,10 +502,11 @@ class RecordModule(BloxoneAnsibleModule):
             return None
 
         update_body = self.payload
-        update_body = self.validate_readonly_on_update(self.existing, update_body, ["type", "zone"])
 
         if getattr(update_body, "view") is not None:
             update_body = self.validate_readonly_on_update(self.existing, update_body, ["type", "zone", "view"])
+        else:
+            update_body = self.validate_readonly_on_update(self.existing, update_body, ["type", "zone"])
 
         resp = RecordApi(self.client).update(id=self.existing.id, body=update_body, inherit="full")
         return resp.result.model_dump(by_alias=True, exclude_none=True)
