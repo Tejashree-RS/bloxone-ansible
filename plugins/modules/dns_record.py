@@ -45,7 +45,7 @@ options:
         type: bool
     inheritance_sources:
         description:
-            - "The inheritance configuration of the Record"
+            - "The inheritance configuration of the Record."
         type: dict
         suboptions:
             ttl:
@@ -133,10 +133,17 @@ extends_documentation_fragment:
 """  # noqa: E501
 
 EXAMPLES = r"""
+    - name: Create a View (required as parent)
+      infoblox.bloxone.dns_view:
+        name: "{{ dns_view_name }}"
+        state: present
+      register: _view 
+        
     - name: Create an Auth Zone (required as parent) 
       infoblox.bloxone.dns_auth_zone:
         fqdn: "example_zone"
         primary_type: "cloud"
+        view: "{{ _view.id }}"
         state: "present"
       register: _auth_zone
     
@@ -162,12 +169,6 @@ EXAMPLES = r"""
         tags:
             location: "site-1"
         state: "present"
-    
-    - name: Create a View (required as parent)
-      infoblox.bloxone.dns_view:
-        name: "{{ dns_view_name }}"
-        state: present
-      register: _view   
         
     - name: Create an A Record with Absolute Name Spec and View
       infoblox.bloxone.dns_record:

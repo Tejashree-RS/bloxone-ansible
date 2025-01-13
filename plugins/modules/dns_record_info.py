@@ -84,12 +84,12 @@ EXAMPLES = r"""
   - name: Get DNS A Record information by filters (absolute_name_spec)
     infoblox.bloxone.a_record_info:
       filters:
-        absolute_name_spec: "example_a_record.example.com"
+        absolute_name_spec: "example_a_record.{{ _auth_zone.fqdn}}"
         type: "A"
 
   - name: Get DNS A Record information by filter query for absolute_name_spec
     infoblox.bloxone.a_record_info:
-      filter_query: "absolute_name_spec=='example_a_record.example.com' and type=='A'"
+      filter_query: "absolute_name_spec=='example_a_record.{{ _auth_zone.fqdn}}' and type=='A'"
 
   - name: Get DNS A Record information by tag filters
     infoblox.bloxone.a_record_info:
@@ -168,12 +168,12 @@ objects:
             returned: Always
         inheritance_sources:
             description:
-                - "The inheritance configuration."
+                - "The inheritance configuration of the Record."
             type: dict
             returned: Always
             contains:
                 ttl:
-                    description: ""
+                    description: "The TTL inheritance settings for the record. If not set, the record will inherit the TTL from the zone."
                     type: dict
                     returned: Always
                     contains:
