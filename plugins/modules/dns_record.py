@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: dns_record
-short_description: Manage Record
+short_description: Manage DNS Resource Record
 description:
     - Manage Record
 version_added: 2.0.0
@@ -455,15 +455,13 @@ class RecordModule(BloxoneAnsibleModule):
                 raise e
         else:
             if self.params["zone"] is not None:
-                filter = f"zone=='{self.params['zone']}' and type=='{self.params['type']}'"
+                if self.params["name_in_zone"] is not None:
+                    filter = f"zone=='{self.params['zone']}' and type=='{self.params['type']}' and name_in_zone=='{self.params['name_in_zone']}'"
+                else:
+                    filter = f"zone=='{self.params['zone']}' and type=='{self.params['type']}'"
 
             elif self.params["absolute_name_spec"] is not None:
                 filter = f"absolute_name_spec=='{self.params['absolute_name_spec']}' and type=='{self.params['type']}'"
-
-            else:
-                return self.fail_json(
-                    msg="Either Zone or Name in Zone and Zone or Absolute Name Spec and View is required to create a record"
-                )
 
             resp = RecordApi(self.client).list(filter=filter, inherit="full")
 
@@ -472,17 +470,18 @@ class RecordModule(BloxoneAnsibleModule):
             if len(resp.results) == 0:
                 return None
 
-            for i in resp.results:
-                if i["address"] != self.params["address"]:
-                    resp.results.pop(i)
-
-            if len(resp.results) == 1:
-                return resp.results[0]
+            for index, val in resp.results:
+                if type == "A":
+                    if getattr(val, "rdata")["address"] == self.params["rdata"]["address"]:
+                        return resp.results[index]
+                if type == "PTR":
+                    if getattr(val, "rdata")["dname"] == self.params["rdata"]["dname"]:
+                        return resp.results[index]
 
             if self.params["absolute_name_spec"] is not None:
-                for i in resp.results:
-                    if i["view"] != self.params["view"]:
-                        resp.results.pop(i)
+                for index, val in resp.results:
+                    if getattr(val, "view") == self.params["view"]:
+                        return resp.results[index]
 
             if len(resp.results) == 1:
                 return resp.results[0]
@@ -503,11 +502,7 @@ class RecordModule(BloxoneAnsibleModule):
             return None
 
         update_body = self.payload
-
-        if getattr(update_body, "view") is not None:
-            update_body = self.validate_readonly_on_update(self.existing, update_body, ["type", "zone", "view"])
-        else:
-            update_body = self.validate_readonly_on_update(self.existing, update_body, ["type", "zone"])
+        update_body = self.validate_readonly_on_update(self.existing, update_body, ["type", "zone"])
 
         resp = RecordApi(self.client).update(id=self.existing.id, body=update_body, inherit="full")
         return resp.result.model_dump(by_alias=True, exclude_none=True)
@@ -590,6 +585,9 @@ def main():
         argument_spec=module_args,
         supports_check_mode=True,
         required_if=[("state", "present", ["rdata", "type"])],
+        required_together=[("absolute_name_spec", "view")],
+        required_one_of=[("absolute_name_spec", "zone")],
+        mutually_exclusive=[("zone", "absolute_name_spec"), ("name_in_zone", "absolute_name_spec"), ("zone", "view")],
     )
 
     module.run_command()

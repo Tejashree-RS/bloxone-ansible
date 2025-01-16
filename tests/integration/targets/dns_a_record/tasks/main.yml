@@ -260,7 +260,17 @@
           - a_record_info is not failed
           - a_record_info.objects | length == 1
           - a_record_info.objects[0].id == a_record.id
-          # create_ptr and check_rmz cannot be asserted here because the flags are not returned in the response of the call
+    - name: Get Information about the PTR Record created in the Reverse Mapping Zone
+      infoblox.bloxone.dns_record_info:
+        filters:
+          zone: "{{ rmz.id }}"
+          type: "PTR"
+      register: ptr_record_info
+    - assert:
+        that:
+          - ptr_record_info is not failed
+          - ptr_record_info.objects | length == 1
+          - ptr_record_info.objects[0].zone == rmz.id
 
     - name: Create an A Record with Name in Zone and Zone
       infoblox.bloxone.dns_record:
@@ -323,6 +333,7 @@
            address: "15.0.0.0"
          type: "A"
          state: absent
+       ignore_errors : true
 
      - name: "Delete the A Record"
        infoblox.bloxone.dns_record:
@@ -332,6 +343,7 @@
            address: "10.0.0.0"
          type: "A"
          state: absent
+       ignore_errors : true
 
      - name: "Delete the Auth Zone"
        ansible.builtin.include_role:

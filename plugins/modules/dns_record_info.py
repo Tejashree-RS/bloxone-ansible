@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: dns_record_info
-short_description: Manage Record
+short_description: Manage DNS Resource Record
 description:
     - Manage Record
 version_added: 2.0.0

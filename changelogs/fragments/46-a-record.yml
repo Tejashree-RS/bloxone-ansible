@@ -1,3 +1,0 @@
-deprecated_features:
-  - b1_a_record - is deprecated in favor of 'dns_record'.
-  - b1_a_record_gather - is deprecated in favor of 'dns_record_info'.
