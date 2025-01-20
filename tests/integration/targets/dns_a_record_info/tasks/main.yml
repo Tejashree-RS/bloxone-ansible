@@ -61,26 +61,6 @@
           - a_record_info.objects | length == 1
           - a_record_info.objects[0].id == a_record.id
 
-    - name: Get A Record information by filters (absolute_name_spec)
-      infoblox.bloxone.dns_record_info:
-        filters:
-          absolute_name_spec: "{{ record_name }}.{{ _fqdn_auth_zone }}"
-          type: "A"
-      register: a_record_info
-    - assert:
-        that:
-          - a_record_info.objects | length == 1
-          - a_record_info.objects[0].id == a_record.id
-
-    - name: Get A Record information by filter query
-      infoblox.bloxone.dns_record_info:
-          filter_query: "absolute_name_spec=='{{ record_name }}.{{ _fqdn_auth_zone }}' and type=='A'"
-      register: a_record_info
-    - assert:
-        that:
-          - a_record_info.objects | length == 1
-          - a_record_info.objects[0].id == a_record.id
-
     - name: Get A Record information by tag filters
       infoblox.bloxone.dns_record_info:
         tag_filters:

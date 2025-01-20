@@ -81,16 +81,6 @@ EXAMPLES = r"""
     infoblox.bloxone.a_record_info:
       filter_query: "zone=='example_zone_id' and type=='A'"
 
-  - name: Get DNS A Record information by filters (absolute_name_spec)
-    infoblox.bloxone.a_record_info:
-      filters:
-        absolute_name_spec: "example_a_record.{{ _auth_zone.fqdn}}"
-        type: "A"
-
-  - name: Get DNS A Record information by filter query for absolute_name_spec
-    infoblox.bloxone.a_record_info:
-      filter_query: "absolute_name_spec=='example_a_record.{{ _auth_zone.fqdn}}' and type=='A'"
-
   - name: Get DNS A Record information by tag filters
     infoblox.bloxone.a_record_info:
       tag_filters:
@@ -214,12 +204,27 @@ objects:
         options:
             description:
                 - "The DNS resource record type-specific non-protocol options."
-                - "Valid value for I(A) (Address) and I(AAAA) (IPv6 Address) records:"
-                - "Option     | Description -----------|----------------------------------------- create_ptr | A boolean flag which can be set to I(true) for POST operation to automatically create the corresponding PTR record. check_rmz  | A boolean flag which can be set to I(true) for POST operation to check the existence of reverse zone for creating the corresponding PTR record. Only applicable if the I(create_ptr) option is set to I(true)."
-                - "Valid value for I(PTR) (Pointer) records:"
-                - "Option     | Description -----------|---------------------------------------- address    | For GET operation it contains the IPv4 or IPv6 address represented by the PTR record.For POST and PATCH operations it can be used to create/update a PTR record based on the IP address it represents. In this case, in addition to the I(address) in the options field, need to specify the I(view) field. |"
+            contains:
+                address:
+                    description: 
+                        - "For GET operation it contains the IPv4 or IPv6 address represented by the PTR record."
+                        - "For POST and PATCH operations it can be used to create/update a PTR record based on the IP address it represents."
+                        - "In this case, in addition to the I(address) in the options field, need to specify the I(view) field."
+                        - "Applicable for Pointer records."
+                    type: bool
+                    returned: Always
+                create_ptr:
+                    description: 
+                        - "A boolean flag which can be set to I(true) for POST operation to automatically create the corresponding PTR record."
+                    type: bool
+                    returned: Always
+                check_rmz:
+                    description: 
+                        - "A boolean flag which can be set to I(true) for POST operation to check the existence of reverse zone for creating the corresponding PTR record."
+                        - "Only applicable if the I(create_ptr) option is set to I(true)."
+                    type: bool
+                    returned: Always
             type: dict
-            returned: Always
         provider_metadata:
             description:
                 - "external DNS provider metadata."
@@ -228,44 +233,358 @@ objects:
         rdata:
             description:
                 - "The DNS resource record data in JSON format. Certain DNS resource record-specific subfields are required for creating the DNS resource record."
-                - "Subfields for I(A) (Address) record:"
-                - "Subfield | Description                           |Required ---------|---------------------------------------|-------- address  | The IPv4 address of the host. | Yes"
-                - "Subfields for I(AAAA) (IPv6 Address) record:"
-                - "Subfield | Description                           | Required ---------|---------------------------------------|--------- address  | The IPv6 address of the host. | Yes"
-                - "Subfields for I(CAA) (Certification Authority Authorization) record:"
-                - "Subfield | Description                           | Required ---------|---------------------------------------|--------- flags    | An unsigned 8-bit integer which specifies the CAA record flags. RFC 6844 defines one (highest) bit in flag octet, remaining bits are deferred for future use. This bit is referenced as I(Critical). When the bit is set (flag value == 128), issuers must not issue certificates in case CAA records contain unknown property tags.Defaults to 0. | No tag      | The CAA record property tag string which indicates the type of CAA record. The following property tags are defined by RFC 6844:I(issue): Used to explicitly authorize CA to issue certificates for the domain in which the property is published.I(issuewild): Used to explicitly authorize a single CA to issue wildcard certificates for the domain in which the property is published.I(iodef): Used to specify an email address or URL to report invalid certificate requests or issuers' certificate policy violations.Note: I(issuewild) type takes precedence over I(issue). | Yes value    | A string which contains the CAA record property value.Specifies the CA who is authorized to issue a certificate for the domain if the CAA record property tag is I(issue) or I(issuewild). Specifies the URL/email address to report CAA policy violation for the domain if the CAA record property tag is I(iodef). | Yes"
-                - "Subfields for I(CNAME) (Canonical Name) record:"
-                - "Subfield | Description                           | Required ---------|---------------------------------------|--------- cname    | A domain name which specifies the canonical or primary name for the owner. The owner name is an alias. Can be empty. | Yes"
-                - "Subfields for I(DNAME) (Delegation Name) record:"
-                - "Subfield | Description                           | Required ---------|---------------------------------------|--------- target   | The target domain name to which the zone will be mapped. Can be empty. | Yes"
-                - "Subfields for I(DHCID) (DHCP Identifier) record:"
-                - "Subfield | Description                           | Required ---------|---------------------------------------|--------- dhcid    | The Base64 encoded string which contains DHCP client information. | Yes"
-                - "Subfields for I(MX) (Mail Exchanger) record:"
-                - "Subfield   | Description                       | Required -----------|-----------------------------------|--------- exchange   | A domain name which specifies a host willing to act as a mail exchange for the owner name. | Yes preference | An unsigned 16-bit integer which specifies the preference given to this RR among others at the same owner. Lower values are preferred. The range of the value is 0 to 65535.  | Yes"
-                - "Subfields for I(NAPTR) (Naming Authority Pointer) record:"
-                - "Subfield    | Description                         | Required ------------|-------------------------------------|--------- flags       | A character string containing flags to control aspects of the rewriting and interpretation of the fields in the DNS resource record. The flags that are currently used are:  B(U): Indicates that the output maps to a URI (Uniform Record Identifier).  B(S): Indicates that the output is a domain name that has at least one SRV record. The DNS client must then send a query for the SRV record of the resulting domain name.  B(A): Indicates that the output is a domain name that has at least one A or AAAA record. The DNS client must then send a query for the A or AAAA record of the resulting domain name.  B(P): Indicates that the protocol specified in the I(services) field defines the next step or phase.  | No order       | A 16-bit unsigned integer specifying the order in which the NAPTR records must be processed. Low numbers are processed before high numbers, and once a NAPTR is found whose rule \"matches\" the target, the client must not consider any NAPTRs with a higher value for order (except as noted below for the \"flags\" field. The range of the value is 0 to 65535.  | Yes preference  |A 16-bit unsigned integer that specifies the order in which NAPTR records with equal \"order\" values should be processed, low numbers being processed before high numbers. This is similar to the preference field in an MX record, and is used so domain administrators can direct clients towards more capable hosts or lighter weight protocols. A client may look at records with higher preference values if it has a good reason to do so such as not understanding the preferred protocol or service. The range of the value is 0 to 65535. | Yes regexp      | A string containing a substitution expression that is applied to the original string held by the client in order to construct the next domain name to lookup.Defaults to none. | No replacement | The next name to query for NAPTR, SRV, or address records depending on the value of the I(flags) field. This can be an absolute or relative domain name. Can be empty. | Yes services | Specifies the service(s) available down this rewrite path. It may also specify the particular protocol that is used to talk with a service. A protocol must be specified if the flags field states that the NAPTR is terminal. If a protocol is specified, but the flags field does not state that the NAPTR is terminal, the next lookup must be for a NAPTR. The client may choose not to perform the next lookup if the protocol is unknown, but that behavior must not be relied upon.The service field may take any of the values below (using the Augmented BNF of RFC 2234):service_field = [ [protocol] *(\"+\" rs)]protocol = ALPHA * 31 ALPHANUMrs = ALPHA * 31 ALPHANUMThe protocol and rs fields are limited to 32 characters and must start with an alphabetic character. For example, an optional protocol specification followed by 0 or more resolution services. Each resolution service is indicated by an initial '+' character. Note that the empty string is also a valid service field.  This will typically be seen at the beginning of a series of rules, when it is impossible to know what services and protocols will be offered by a particular service. The actual format of the service request and response will be determined by the resolution protocol. Protocols need not offer all services. The labels for service requests shall be formed from the set of characters [A-Z0-9]. The case of the alphabetic characters is not significant. | Yes"
-                - "Subfields for I(NS) (Name Server) record:"
-                - "Subfield | Description                         | Required ---------|-------------------------------------|--------- dname    | A domain-name which specifies a host which should be authoritative for the specified class and domain. Can be absolute or relative domain name and include UTF-8.  | Yes"
-                - "Subfields for I(PTR) (Pointer) record:"
-                - "Subfield | Description                         | Required ---------|-------------------------------------|--------- dname    | A domain name which points to some location in the domain name space. Can be absolute or relative domain name and include UTF-8.  | Yes"
-                - "Subfields for I(SOA) (Start of Authority) record:"
-                - "Subfield     | Description                         | Required ------------ |-------------------------------------|--------- expire       | The time interval in seconds after which zone data will expire and secondary server stops answering requests for the zone. | No mname        | The domain name for the master server for the zone. Can be absolute or relative domain name. | Yes negative_ttl | The time interval in seconds for which name servers can cache negative responses for zone. Defaults to 900 seconds (15 minutes). | No refresh      | The time interval in seconds that specifies how often secondary servers need to send a message to the primary server for a zone to check that their data is current, and retrieve fresh data if it is not.Defaults to 10800 seconds (3 hours). | No retry        | The time interval in seconds for which the secondary server will wait before attempting to recontact the primary server after a connection failure occurs.Defaults to 3600 seconds (1 hour). | No rname        | The domain name which specifies the mailbox of the person responsible for this zone.  | No serial       | An unsigned 32-bit integer that specifies the serial number of the zone. Used to indicate that zone data was updated, so the secondary name server can initiate zone transfer. The range of the value is 0 to 4294967295.  | No"
-                - "Subfields for I(SRV) (Service) record:"
-                - "Subfield | Description                         | Required ---------|-------------------------------------|--------- port     | An unsigned 16-bit integer which specifies the port on this target host of this service. The range of the value is 0 to 65535. This is often as specified in Assigned Numbers but need not be. | Yes priority | An unsigned 16-bit integer which specifies the priority of this target host. The range of the value is 0 to 65535. A client must attempt to contact the target host with the lowest-numbered priority it can reach. Target hosts with the same priority should be tried in an order defined by the I(weight) field.| Yes target   | The domain name of the target host. There must be one or more address records for this name, the name must not be an alias (in the sense of RFC 1034 or RFC 2181).A target of \".\" means that the service is decidedly not available at this domain. | Yes weight   | An unsigned 16-bit integer which specifies a relative weight for entries with the same priority. The range of the value is 0 to 65535. Larger weights should be given a proportionately higher probability of being selected. Domain administrators should use weight 0 when there isn't any server selection to do, to make the RR easier to read for humans (less noisy). In the presence of records containing weights greater than 0, records with weight 0 should have a very small chance of being selected.In the absence of a protocol whose specification calls for the use of other weighting information, a client arranges the SRV RRs of the same priority in the order in which target hosts, specified by the SRV RRs, will be contacted.Defaults to 0.| No"
-                - "Subfields for I(TXT) (Text) record:"
-                - "Subfield | Description                         | Required ---------|-------------------------------------|--------- text     | The semantics of the text depends on the domain where it is found. | No"
-                - "Generic record can be used to represent any DNS resource record not listed above. Subfields for a generic record consist of a list of struct subfields, each having the following sub-subfields: Sub-subfield | Description                        | Required -------------|------------------------------------|--------- type         | Following types are supported:I(8BIT): Unsigned 8-bit integer.  I(16BIT): Unsigned 16-bit integer.  I(32BIT): Unsigned 32-bit integer.  I(IPV6): IPv6 address. For example, \"abcd:123::abcd\".  I(IPV4): IPv4 address. For example, \"1.1.1.1\".  I(DomainName): Domain name (absolute or relative).  I(TEXT): ASCII text.  I(BASE64): Base64 encoded binary data.  I(HEX): Hex encoded binary data. I(PRESENTATION): Presentation is a standard textual form of record data, as shown in a standard master zone file.  For example, an IPSEC RDATA could be specified using the PRESENTATION type field whose value is \"10 1 2 192.0.2.38 AQNRU3mG7TVTO2BkR47usntb102uFJtugbo6BSGvgqt4AQ==\", instead of a sequence of the following subfields:  8BIT: value=10  8BIT: value=1  8BIT: value=2  IPV4: value=\"192.0.2.38\"  BASE64 (without I(length_kind) sub-subfield): value=\"AQNRU3mG7TVTO2BkR47usntb102uFJtugbo6BSGvgqt4AQ==\" If type is I(PRESENTATION), only one struct subfield can be specified.  | Yes length_kind  | A string indicating the size in bits of a sub-subfield that is prepended to the value and encodes the length of the value. Valid values are:I(8): If I(type) is I(ASCII) or I(BASE64). I(16): If I(type) is I(HEX).Defaults to none. | Only required for some types. value        | A string representing the value for the sub-subfield | Yes"
+            contains:
+                A:
+                    description: 
+                        - "Subfields and descriptions for I(A) (Address) record:"
+                    contains:
+                        address:
+                            description:
+                                - "The IPv4 address of the host."
+                            type: str
+                            returned: Always
+                    type: dict
+                AAAA:
+                    description: 
+                        - "Subfields and descriptions for I(AAAA) (IPv6 Address) record:"
+                    contains:
+                        address:
+                            description:
+                                - "The IPv6 address of the host."
+                            type: str
+                            returned: Always
+                    type: dict
+                CAA:
+                    description: 
+                        - "Subfields and descriptions for I(CAA) (Certification Authority Authorization) record:"
+                    contains:
+                        flags:
+                            description:
+                                - "An unsigned 8-bit integer which specifies the CAA record flags. RFC 6844 defines one (highest) bit in flag octet, remaining bits are deferred for future use. This bit is referenced as I(Critical). When the bit is set (flag value == 128), issuers must not issue certificates in case CAA records contain unknown property tags."
+                                - "Defaults to 0."
+                            type: int
+                            returned: Always
+                        tag:
+                            description:
+                                - "The CAA record property tag string which indicates the type of CAA record. The following property tags are defined by RFC 6844: "
+                                - "I(issue): Used to explicitly authorize CA to issue certificates for the domain in which the property is published. "
+                                - "I(issuewild): Used to explicitly authorize a single CA to issue wildcard certificates for the domain in which the property is published. "
+                                - "I(iodef): Used to specify an email address or URL to report invalid certificate requests or issuers' certificate policy violations. "
+                                - "Note: I(issuewild) type takes precedence over I(issue)."
+                            type: str
+                            returned: Always
+                        value:
+                            description:
+                                - "A string which contains the CAA record property value."
+                                - "Specifies the CA who is authorized to issue a certificate for the domain if the CAA record property tag is I(issue) or I(issuewild)."
+                                - "Specifies the URL/email address to report CAA policy violation for the domain if the CAA record property tag is I(iodef)."
+                            type: str
+                            returned: Always
+                    type: dict
+                CNAME:
+                    description:
+                        - "Subfields and descriptions for I(CNAME) (Canonical Name) record:"
+                    contains:
+                        cname:
+                            description:
+                                - "A domain name which specifies the canonical or primary name for the owner. The owner name is an alias. Can be empty."
+                            type: str
+                            returned: Always
+                    type: dict
+                DNAME:
+                    description:
+                        - "Subfields and descriptions for I(DNAME) (Delegation Name) record:"
+                    contains:
+                        target:
+                            description:
+                                - "The target domain name to which the zone will be mapped. Can be empty."
+                            type: str
+                            returned: Always
+                    type: dict
+                DHCID:
+                    description:
+                        - "Subfields and descriptions for I(DHCID) (DHCP Identifier) record:"
+                    contains:
+                        dhcid:
+                            description:
+                                - "The Base64 encoded string which contains DHCP client information."
+                            type: str
+                            returned: Always
+                    type: dict
+                MX:
+                    description:
+                        - "Subfields and descriptions for I(MX) (Mail Exchanger) record:"
+                    contains:
+                        exchange:
+                            description:
+                                - "A domain name which specifies a host willing to act as a mail exchange for the owner name."
+                            type: str
+                            returned: Always                       
+                        preference:
+                            description:
+                                - "An unsigned 16-bit integer which specifies the preference given to this RR among others at the same owner. Lower values are preferred. The range of the value is 0 to 65535."
+                            type: int
+                            returned: Always
+                    type: dict
+                NAPTR:
+                    description:
+                        - "Subfields and descriptions for I(NAPTR) (Naming Authority Pointer) record:"
+                    contains:
+                        flags:
+                            description:
+                                - "A character string containing flags to control aspects of the rewriting and interpretation of the fields in the DNS resource record. The flags that are currently used are: "
+                                - "B(U): Indicates that the output maps to a URI (Uniform Record Identifier). "
+                                - "B(S): Indicates that the output is a domain name that has at least one SRV record. The DNS client must then send a query for the SRV record of the resulting domain name. "
+                                - "B(A): Indicates that the output is a domain name that has at least one A or AAAA record. The DNS client must then send a query for the A or AAAA record of the resulting domain name. "
+                                - "B(P): Indicates that the protocol specified in the I(services) field defines the next step or phase."
+                            type: str
+                            returned: Always
+                        order:
+                            description:
+                                - "A 16-bit unsigned integer specifying the order in which the NAPTR records must be processed. Low numbers are processed before high numbers, and once a NAPTR is found whose rule \"matches\" the target, the client must not consider any NAPTRs with a higher value for order (except as noted below for the \"flags\" field. The range of the value is 0 to 65535."
+                            type: int
+                            returned: Always
+                        preference:
+                            description:
+                                - "A 16-bit unsigned integer that specifies the order in which NAPTR records with equal \"order\" values should be processed, low numbers being processed before high numbers. This is similar to the preference field in an MX record, and is used so domain administrators can direct clients towards more capable hosts or lighter weight protocols. A client may look at records with higher preference values if it has a good reason to do so such as not understanding the preferred protocol or service. The range of the value is 0 to 65535."
+                            type: int
+                            returned: Always
+                        regexp:
+                            description:
+                                - "A string containing a substitution expression that is applied to the original string held by the client in order to construct the next domain name to lookup. Defaults to none."
+                            type: str
+                            returned: Always
+                        replacement:
+                            description:
+                                - "The next name to query for NAPTR, SRV, or address records depending on the value of the I(flags) field. This can be an absolute or relative domain name. Can be empty."
+                            type: str
+                            returned: Always
+                        services:
+                            description:
+                                - "Specifies the service(s) available down this rewrite path. It may also specify the particular protocol that is used to talk with a service. A protocol must be specified if the flags field states that the NAPTR is terminal. If a protocol is specified, but the flags field does not state that the NAPTR is terminal, the next lookup must be for a NAPTR. The client may choose not to perform the next lookup if the protocol is unknown, but that behavior must not be relied upon."
+                                - "The service field may take any of the values below (using the Augmented BNF of RFC 2234):"
+                                - V(service_field = [ [protocol] *("+" rs\)])
+                                - V(protocol = ALPHA * 31 ALPHANUM)
+                                - V(rs = ALPHA * 31 ALPHANUM)
+                                - "The protocol and rs fields are limited to 32 characters and must start with an alphabetic character."
+                                - "For example, an optional protocol specification followed by 0 or more resolution services. Each resolution service is indicated by an initial '+' character."
+                                - "Note that the empty string is also a valid service field.  This will typically be seen at the beginning of a series of rules, when it is impossible to know what services and protocols will be offered by a particular service."
+                                - "The actual format of the service request and response will be determined by the resolution protocol. Protocols need not offer all services."
+                                - "The labels for service requests shall be formed from the set of characters [A-Z0-9]. The case of the alphabetic characters is not significant."
+                            type: str
+                            returned: Always
+                    type: dict
+                NS:
+                    description:
+                        - "Subfields and descriptions for I(NS) (Name Server) record:"
+                    contains:
+                        dname:
+                            description:
+                                - "A domain-name which specifies a host which should be authoritative for the specified class and domain. Can be absolute or relative domain name and include UTF-8."
+                            type: str
+                            returned: Always
+                    type: dict
+                PTR:
+                    description:
+                        - "Subfields and descriptions for I(PTR) (Pointer) record:"
+                    contains:
+                        dname:
+                            description:
+                                - "A domain name which points to some location in the domain name space. Can be absolute or relative domain name and include UTF-8."
+                            type: str
+                            returned: Always
+                    type: dict
+                SOA:
+                    description:
+                        - "Subfields and descriptions for I(SOA) (Start of Authority) record:"
+                    contains:
+                        expire:
+                            description:
+                                - "The time interval in seconds after which zone data will expire and secondary server stops answering requests for the zone."
+                            type: int
+                            returned: Always
+                        mname:
+                            description:
+                                - "The domain name for the master server for the zone. Can be absolute or relative domain name."
+                            type: str
+                            returned: Always
+                        negative_ttl:
+                            description:
+                                - "The time interval in seconds for which name servers can cache negative responses for zone. Defaults to 900 seconds (15 minutes)."
+                            type: int
+                            returned: Always
+                        refresh:
+                            description:
+                                - "The time interval in seconds that specifies how often secondary servers need to send a message to the primary server for a zone to check that their data is current, and retrieve fresh data if it is not. Defaults to 10800 seconds (3 hours)."
+                            type: int
+                            returned: Always
+                        retry:
+                            description:
+                                - "The time interval in seconds for which the secondary server will wait before attempting to recontact the primary server after a connection failure occurs. Defaults to 3600 seconds (1 hour)."
+                            type: int
+                            returned: Always
+                        rname:
+                            description:
+                                - "The domain name which specifies the mailbox of the person responsible for this zone."
+                            type: str
+                            returned: Always
+                        serial:
+                            description:
+                                - "An unsigned 32-bit integer that specifies the serial number of the zone. Used to indicate that zone data was updated, so the secondary name server can initiate zone transfer. The range of the value is 0 to 4294967295."
+                            type: int
+                            returned: Always
+                    type: dict
+                SRV:
+                    description:
+                        - "Subfields and descriptions for I(SRV) (Service) record:"
+                    contains:
+                        port:
+                            description:
+                                - "An unsigned 16-bit integer which specifies the port on this target host of this service. The range of the value is 0 to 65535. This is often as specified in Assigned Numbers but need not be."
+                            type: int
+                            returned: Always
+                        priority:
+                            description:
+                                - "An unsigned 16-bit integer which specifies the priority of this target host. The range of the value is 0 to 65535. A client must attempt to contact the target host with the lowest-numbered priority it can reach. Target hosts with the same priority should be tried in an order defined by the I(weight) field."
+                            type: int
+                            returned: Always
+                        target:
+                            description:
+                                - "The domain name of the target host. There must be one or more address records for this name, the name must not be an alias (in the sense of RFC 1034 or RFC 2181)."
+                            type: str
+                            returned: Always
+                        weight:
+                            description:
+                                - "A target of '.' means that the service is decidedly not available at this domain."
+                                - "An unsigned 16-bit integer which specifies a relative weight for entries with the same priority. The range of the value is 0 to 65535."
+                                - "Larger weights should be given a proportionately higher probability of being selected. Domain administrators should use weight 0 when there is not any server selection to do, to make the RR easier to read for humans (less noisy). In the presence of records containing weights greater than 0, records with weight 0 should have a very small chance of being selected."
+                                - "In the absence of a protocol whose specification calls for the use of other weighting information, a client arranges the SRV RRs of the same priority in the order in which target hosts, specified by the SRV RRs, will be contacted."
+                                -  "Defaults to 0."
+                            type: int
+                            returned: Always
+                    type: dict
+                TXT:
+                    description:
+                        - "Subfields and descriptions for I(TXT) (Text) record:"
+                    contains:
+                        text:
+                            description:
+                                - "	The semantics of the text depends on the domain where it is found."
+                            type: str
+                            returned: Always
+                    type: dict
+                Generic:
+                    description:
+                        - "Generic record can be used to represent any DNS resource record not listed above. Subfields for a generic record consist of a list of struct subfields, each having the following sub-subfields:"
+                    contains:
+                        type:
+                            description: 
+                                - "Following types are supported:"
+                                - "8BIT: Unsigned 8-bit integer."
+                                - "16BIT: Unsigned 16-bit integer."
+                                - "32BIT: Unsigned 32-bit integer."
+                                - "IPV6: IPv6 address. For example, \"abcd:123::abcd\"."
+                                - "IPV4: IPv4 address. For example, \"1.1.1.1\"."
+                                - "DomainName: Domain name (absolute or relative)."
+                                - "TEXT: ASCII text."
+                                - "BASE64: Base64 encoded binary data."
+                                - "HEX: Hex encoded binary data."
+                                - "PRESENTATION: Presentation is a standard textual form of record data, as shown in a standard master zone file."
+                            type: str
+                            returned: Always
+                        length_kind:
+                            description:
+                                - "A string indicating the size in bits of a sub-subfield that is prepended to the value and encodes the length of the value. Valid values are:"
+                                - "8: If type is ASCII or BASE64."
+                                - "16: If type is HEX."
+                                - "Defaults to none."
+                                - "Required only for few types."
+                            type: str
+                            returned: Always
+                        value:
+                            description:
+                                - "A string representing the value for the sub-subfield."
+                            type: str
+                            returned: Always
+                        example:
+                            description:
+                                - "For example, an IPSEC RDATA could be specified using the PRESENTATION type field whose value is V(\"10 1 2 192.0.2.38 AQNRU3mG7TVTO2BkR47usntb102uFJtugbo6BSGvgqt4AQ==\"), instead of a sequence of the following subfields:"
+                                - "8BIT: value=10"
+                                - "8BIT: value=1"
+                                - "8BIT: value=2"
+                                - "IPV4: value=\"192.0.2.38\""
+                                - "BASE64 (without length_kind sub-subfield): value=\"AQNRU3mG7TVTO2BkR47usntb102uFJtugbo6BSGvgqt4AQ==\""
+                                - "If type is PRESENTATION, only one struct subfield can be specified."
+                            type: str
+                            returned: Always
+                    type: dict
             type: dict
-            returned: Always
         source:
             description:
-                - "Source indicator                    | Description ------------------------------------|-------------------------------- I(STATIC)                            |  Record was created manually by API call to I(dns/record). Valid for all record types except I(SOA). I(SYSTEM)                            |  Record was created automatically based on name server assignment. Valid for I(SOA), I(NS), I(A), I(AAAA), and I(PTR) record types. I(DYNAMIC)                           |  Record was created dynamically by performing dynamic update. Valid for all record types except I(SOA). I(DELEGATED)                         |  Record was created automatically based on delegation servers assignment. Always extends the I(SYSTEM) bit. Valid for I(NS), I(A), I(AAAA), and I(PTR) record types. I(DTC)                               |  Record was created automatically based on the DTC configuration. Always extends the I(SYSTEM) bit. Valid only for I(IBMETA) record type with I(LBDN) subtype. I(STATIC), I(SYSTEM)                  |  Record was created manually by API call but it is obfuscated by record generated based on name server assignment. I(DYNAMIC), I(SYSTEM)                 |  Record was created dynamically by DDNS but it is obfuscated by record generated based on name server assignment. I(DELEGATED), I(SYSTEM)               |  Record was created automatically based on delegation servers assignment. I(SYSTEM) will always accompany I(DELEGATED). I(DTC), I(SYSTEM)                     |  Record was created automatically based on the DTC configuration. I(SYSTEM) will always accompany I(DTC). I(STATIC), I(SYSTEM), I(DELEGATED)     |  Record was created manually by API call but it is obfuscated by record generated based on name server assignment as a result of creating a delegation. I(DYNAMIC), I(SYSTEM), I(DELEGATED)    |  Record was created dynamically by DDNS but it is obfuscated by record generated based on name server assignment as a result of creating a delegation."
+                - "The DNS resource record type-specific non-protocol source. The source is a combination of indicators, each tracking how the DNS resource record appeared in the system. Listed below are source indicators with their meaning:"
+            contains:
+                STATIC:
+                  description: 
+                    - "Record was created manually by API call to I(dns/record). Valid for all record types except I(SOA)."
+                  type: str
+                  returned: Always
+                SYSTEM:
+                  description: 
+                    - "Record was created automatically based on name server assignment. Valid for I(SOA), I(NS), I(A), I(AAAA), and I(PTR) record types."
+                  type: str
+                  returned: Always
+                DYNAMIC:
+                  description: 
+                    - "Record was created dynamically by performing dynamic update. Valid for all record types except I(SOA)."
+                  type: str
+                  returned: Always
+                DELEGATED:
+                  description: 
+                    - "Record was created automatically based on delegation servers assignment. Always extends the I(SYSTEM) bit. Valid for I(NS), I(A), I(AAAA), and I(PTR) record types."
+                  type: str
+                  returned: Always
+                DTC:
+                  description: 
+                    - "Record was created automatically based on the DTC configuration. Always extends the I(SYSTEM) bit. Valid only for I(IBMETA) record type with I(LBDN) subtype."
+                  type: str
+                  returned: Always
+                STATIC, SYSTEM:
+                  description: 
+                    - "Record was created manually by API call but it is obfuscated by record generated based on name server assignment."
+                  type: str
+                  returned: Always
+                DYNAMIC, SYSTEM:
+                  description: 
+                    - "Record was created dynamically by DDNS but it is obfuscated by record generated based on name server assignment."
+                  type: str
+                  returned: Always
+                DELEGATED, SYSTEM:
+                  description: 
+                    - "Record was created automatically based on delegation servers assignment. I(SYSTEM) will always accompany I(DELEGATED)."
+                  type: str
+                  returned: Always
+                DTC, SYSTEM:
+                  description: 
+                    - "Record was created automatically based on the DTC configuration. I(SYSTEM) will always accompany I(DTC)."
+                  type: str
+                  returned: Always
+                STATIC, SYSTEM, DELEGATED:
+                  description: 
+                    - "Record was created manually by API call but it is obfuscated by record generated based on name server assignment as a result of creating a delegation."
+                  type: str
+                  returned: Always
+                DYNAMIC, SYSTEM, DELEGATED:
+                  description: 
+                    - "Record was created dynamically by DDNS but it is obfuscated by record generated based on name server assignment as a result of creating a delegation."
+                  type: str
+                  returned: Always
             type: list
-            returned: Always
         subtype:
             description:
                 - "The DNS resource record subtype specified in the textual mnemonic format. Valid only in case I(type) is I(IBMETA)."
-                - "Value | Numeric Type | Description ------|--------------|--------------------------------------------- | 0            | Default value LBDN  | 1            | LBDN record"
+                - V(Value      |  Numeric Type       |   Description)
+                - V(  0        |  Default value      |               )
+                - V(  1        |       1             |   LBDN record)
             type: str
             returned: Always
         tags:
@@ -281,8 +600,24 @@ objects:
             returned: Always
         type:
             description:
-                - "The DNS resource record type specified in the textual mnemonic format or in the \"TYPEnnn\" format where \"nnn\" indicates the numeric type value."
-                - "Value  | Numeric Type | Description -------|--------------|--------------------------------------------- A      | 1            | Address record AAAA   | 28           | IPv6 Address record CAA    | 257          | Certification Authority Authorization record CNAME  | 5            | Canonical Name record DNAME  | 39           | Delegation Name record DHCID  | 49           | DHCP Identifier record MX     | 15           | Mail Exchanger record NAPTR  | 35           | Naming Authority Pointer record NS     | 2            | Name Server record PTR    | 12           | Pointer record SOA    | 6            | Start of Authority record SRV    | 33           | Service record TXT    | 16           | Text record IBMETA | 65536        | Infoblox meta records, not valid for DNS protocol (read-only)"
+              - "The DNS resource record type specified in the textual mnemonic format or in the \"TYPEnnn\" format where \"nnn\" indicates the numeric type value."
+              - V(Value      | Numeric Type  |   Description)
+              - V(A          |       1       |   Address record)
+              - V(AAAA       |      28       |   IPv6 Address record)
+              - V(CAA        |     257       |   Certification Authority Authorization record)
+              - V(CNAME      |       5       |   Canonical Name record)
+              - V(DNAME      |      39       |   Delegation Name record)
+              - V(DHCID      |      49       |   DHCP Identifier record)
+              - V(HTTPS      |      65       |   HTTPS Record)
+              - V(MX         |      15       |   Mail Exchanger record)
+              - V(NAPTR      |      35       |   Naming Authority Pointer record)
+              - V(NS         |       2       |   Name Server record)
+              - V(PTR        |      12       |   Pointer record)
+              - V(SOA        |       6       |   Start of Authority record)
+              - V(SRV        |      33       |   Service record)
+              - V(SVCB       |      64       |   Service Binding Record)
+              - V(TXT        |      16       |   Text record)
+              - V(IBMETA     |   65536       |   Infoblox meta records, not valid for DNS protocol (read-only\))
             type: str
             returned: Always
         updated_at:

@@ -8,10 +8,6 @@
     # Create an A record with a random name to avoid conflicts
     - ansible.builtin.set_fact:
         record_name: "test-a-record-{{ 999999 | random | string }}"
-        record_2_name: "test-a-record-2-{{ 999999 | random | string }}"
-
-    - ansible.builtin.set_fact:
-        absolute_name_spec: "{{ record_2_name }}.{{ _fqdn_auth_zone }}"
 
     - name: Create an A Record (check mode)
       infoblox.bloxone.dns_record:
@@ -295,46 +291,7 @@
           - a_record_info.objects[0].name_in_zone == a_record.object.name_in_zone
           - a_record_info.objects[0].zone == a_record.object.zone
 
-    - name: Create an A Record using Absolute Name Spec and View
-      infoblox.bloxone.dns_record:
-        absolute_name_spec: "{{ absolute_name_spec }}"
-        view: "{{ _view.id }}"
-        comment: "This is a test A Record created using ANS and View"
-        rdata:
-          address: "15.0.0.0"
-        type: "A"
-        state: present
-      register: a_record
-    - name: Get Information about the A Record
-      infoblox.bloxone.dns_record_info:
-        filters:
-          absolute_name_spec: "{{ absolute_name_spec }}"
-          type: "A"
-      register: a_record_info
-    - assert:
-        that:
-          - a_record_info is not failed
-          - a_record_info.objects | length == 1
-          - a_record_info.objects[0].id == a_record.id
-          - a_record_info.objects[0].absolute_name_spec == a_record.object.absolute_name_spec
-          - a_record_info.objects[0].view == a_record.object.view
-          - a_record_info.objects[0].rdata.address == "15.0.0.0"
-          - a_record_info.objects[0].comment == "This is a test A Record created using ANS and View"
-          - a_record_info.objects[0].type == "A"
-          - a_record_info.objects[0].name_in_zone == a_record.object.name_in_zone
-          - a_record_info.objects[0].zone == a_record.object.zone
-
   always:
-     - name: "Delete the A Record created with Absolute Name Spec and View"
-       infoblox.bloxone.dns_record:
-         absolute_name_spec: "{{ absolute_name_spec }}"
-         view: "{{ _view.id }}"
-         rdata:
-           address: "15.0.0.0"
-         type: "A"
-         state: absent
-       ignore_errors : true
-
      - name: "Delete the A Record"
        infoblox.bloxone.dns_record:
          name_in_zone: "{{ record_name }}"
@@ -343,7 +300,7 @@
            address: "10.0.0.0"
          type: "A"
          state: absent
-       ignore_errors : true
+       ignore_errors: true
 
      - name: "Delete the Auth Zone"
        ansible.builtin.include_role:
