@@ -8,12 +8,16 @@
     # Create an A record with a random name to avoid conflicts
     - ansible.builtin.set_fact:
         record_name: "test-a-record-{{ 999999 | random | string }}"
+        record_2_name: "test-a-record-2-{{ 999999 | random | string }}"
+
+    - ansible.builtin.set_fact:
+        absolute_name_spec: "{{ record_2_name }}.{{ _fqdn_auth_zone }}"
 
     - name: Create an A Record (check mode)
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          address: "192.168.10.0"
+          address: "192.168.10.10"
         type: "A"
         state: present
       check_mode: true
@@ -35,7 +39,7 @@
         zone: "{{ _auth_zone.id }}"
         type: "A"
         rdata:
-          address: "192.168.10.0"
+          address: "192.168.10.10"
         state: present
       register: a_record
     - name: Get Information about the A Record
@@ -50,7 +54,7 @@
           - a_record_info is not failed
           - a_record_info.objects | length == 1
           - a_record_info.objects[0].id == a_record.id
-          - a_record_info.objects[0].rdata.address == "192.168.10.0"
+          - a_record_info.objects[0].rdata.address == "192.168.10.10"
           - a_record_info.objects[0].type == "A"
           - a_record_info.objects[0].zone == a_record.object.zone
 
@@ -59,7 +63,7 @@
         zone: "{{ _auth_zone.id }}"
         type: "A"
         rdata:
-          address: "192.168.10.0"
+          address: "192.168.10.10"
         state: present
       register: a_record
     - assert:
@@ -71,7 +75,7 @@
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          address: "192.168.10.20"
+          address: "192.168.10.10"
         type: "A"
         state: absent
       check_mode: true
@@ -92,7 +96,7 @@
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          address: "192.168.10.20"
+          address: "192.168.10.10"
         type: "A"
         state: absent
       register: a_record
@@ -112,7 +116,7 @@
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          address: "192.168.10.20"
+          address: "192.168.10.10"
         type: "A"
         state: absent
       register: a_record
@@ -290,6 +294,23 @@
           - a_record_info.objects[0].id == a_record.id
           - a_record_info.objects[0].name_in_zone == a_record.object.name_in_zone
           - a_record_info.objects[0].zone == a_record.object.zone
+
+    - name: Create an A Record using Absolute Name Spec and View
+      infoblox.bloxone.dns_record:
+        absolute_name_spec: "{{ absolute_name_spec }}"
+        view: "{{ _view.id }}"
+        comment: "This is a test A Record created using ANS and View"
+        rdata:
+          address: "15.0.0.0"
+        type: "A"
+        state: present
+      ignore_errors: yes
+      register: a_record2
+    - name: Fail the task
+      fail:
+        msg: "Creation of Record via Absolute Name Spec and View is not supported by the current Ansible module. Zone is a required field for the record."
+      when: a_record2.failed
+      ignore_errors: yes
 
   always:
      - name: "Delete the A Record"

@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: dns_record_info
-short_description: Manage DNS Resource Record
+short_description: Retrieves DNS Resource Record
 description:
-    - Manage Record
+    - Retrieves information about existing DNS Resource Records
 version_added: 2.0.0
 author: Infoblox Inc. (@infobloxopen)
 options:
@@ -77,7 +77,7 @@ EXAMPLES = r"""
         zone: "example_zone_id"
         type: "A"
 
-  - name: Get DNS A Record information by filter query for zone
+  - name: Get DNS A Record information by raw filter query 
     infoblox.bloxone.a_record_info:
       filter_query: "zone=='example_zone_id' and type=='A'"
 

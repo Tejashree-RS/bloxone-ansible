@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: dns_record
 short_description: Manage DNS Resource Record
 description:
-    - Manage Record
+    - Manage DNS Resource Record
 version_added: 2.0.0
 author: Infoblox Inc. (@infobloxopen)
 options:
@@ -60,6 +60,7 @@ options:
         description:
             - "The relative owner name to the zone origin. Must be specified for creating the DNS resource record and is read only for other operations."
         type: str
+        default: ""
     options:
         description:
             - "The DNS resource record type-specific non-protocol options."
@@ -406,6 +407,7 @@ options:
         description:
             - "The resource identifier."
         type: str
+        required: true
 
 extends_documentation_fragment:
     - infoblox.bloxone.common
@@ -1064,25 +1066,16 @@ class RecordModule(BloxoneAnsibleModule):
                     return None
                 raise e
         else:
-            if self.params["zone"] is not None and self.params["name_in_zone"] is not None:
-                filter = f"zone=='{self.params['zone']}' and type=='{self.params['type']}' and name_in_zone=='{self.params['name_in_zone']}'"
-            else:
-                filter = f"zone=='{self.params['zone']}' and type=='{self.params['type']}'"
+            filter = f"zone=='{self.params['zone']}' and type=='{self.params['type']}' and name_in_zone=='{self.params['name_in_zone']}'"
 
             resp = RecordApi(self.client).list(filter=filter, inherit="full")
 
-            if len(resp.results) == 1:
-                return resp.results[0]
             if len(resp.results) == 0:
                 return None
 
-            for index, val in resp.results:
-                if type == "A":
-                    if getattr(val, "rdata")["address"] == self.params["rdata"]["address"]:
-                        return resp.results[index]
-                elif type == "PTR":
-                    if getattr(val, "rdata")["dname"] == self.params["rdata"]["dname"]:
-                        return resp.results[index]
+            for index, val in enumerate(resp.results):
+                if getattr(val, "rdata") != self.params["rdata"]:
+                    return resp.results.pop(index)
 
             if len(resp.results) == 1:
                 return resp.results[0]
@@ -1171,20 +1164,21 @@ def main():
                 ),
             ),
         ),
-        name_in_zone=dict(type="str"),
+        name_in_zone=dict(type="str", default=""),
         options=dict(type="dict"),
         rdata=dict(type="dict", required=True),
         tags=dict(type="dict"),
         ttl=dict(type="int"),
         type=dict(type="str", required=True),
         view=dict(type="str"),
-        zone=dict(type="str"),
+        zone=dict(type="str", required=True),
     )
 
     module = RecordModule(
         argument_spec=module_args,
         supports_check_mode=True,
         required_if=[("state", "present", ["rdata", "type", "zone"])],
+        required_by={"name_in_zone": "zone"},
     )
 
     module.run_command()

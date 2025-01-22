@@ -33,7 +33,7 @@
           - a_record_info.objects | length == 1
           - a_record_info.objects[0].id == a_record.id
 
-    - name: Get A Record information by filter query
+    - name: Get A Record information by raw filter query
       infoblox.bloxone.dns_record_info:
         filter_query: "name_in_zone=='{{ record_name }}' and type=='A'"
     - assert:
@@ -52,7 +52,7 @@
           - a_record_info.objects | length == 1
           - a_record_info.objects[0].id == a_record.id
 
-    - name: Get A Record information by filter query
+    - name: Get A Record information by raw filter query
       infoblox.bloxone.dns_record_info:
         filter_query: "zone=='{{ _auth_zone.id }}' and type=='A'"
       register: a_record_info
