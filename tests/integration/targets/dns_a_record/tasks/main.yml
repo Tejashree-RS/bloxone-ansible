@@ -306,11 +306,10 @@
         state: present
       ignore_errors: yes
       register: a_record2
-    - name: Fail the task
-      fail:
-        msg: "Creation of Record via Absolute Name Spec and View is not supported by the current Ansible module. Zone is a required field for the record."
-      when: a_record2.failed
-      ignore_errors: yes
+    - assert:
+        that:
+          - a_record2 is failed
+          - a_record2.msg == "missing required arguments: zone"
 
   always:
      - name: "Delete the A Record"
