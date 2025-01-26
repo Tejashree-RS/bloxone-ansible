@@ -204,10 +204,10 @@
       register: txt_record_info
     - assert:
        that:
-            - txt_record_info is not failed
-            - txt_record_info.objects | length == 1
-            - txt_record_info.objects[0].id == txt_record.id
-            - txt_record_info.objects[0].tags.location == "site-1"
+          - txt_record_info is not failed
+          - txt_record_info.objects | length == 1
+          - txt_record_info.objects[0].id == txt_record.id
+          - txt_record_info.objects[0].tags.location == "site-1"
 
     - name: Create DNS TXT Record with Inheritance Sources
       infoblox.bloxone.dns_record:

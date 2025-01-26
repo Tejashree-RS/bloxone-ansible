@@ -273,4 +273,3 @@
        ansible.builtin.include_role:
          name: setup_view
          tasks_from: cleanup.yml
-

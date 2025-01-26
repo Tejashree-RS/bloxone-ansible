@@ -3,11 +3,12 @@
     group/infoblox.bloxone.all:
       csp_url: "{{ csp_url }}"
       api_key: "{{ api_key }}"
+
   block:
     # Create a random PTR record name to avoid conflicts
     - ansible.builtin.set_fact:
-        tag_value: "site-{{ 999999 | random | string }}"
         record_name: "{{ 256 | random }}"
+        tag_value: "site-{{ 999999 | random | string }}"
 
     # Basic Test for PTR Record
     - name: Create a PTR Record
@@ -22,28 +23,10 @@
         state: present
       register: ptr_record
 
-    - name: Get PTR Record information by filters (name_in_zone)
+    - name: Get PTR Record information
       infoblox.bloxone.dns_record_info:
         filters:
           name_in_zone: "{{ record_name }}"
-          type: "PTR"
-      register: ptr_record_info
-    - assert:
-        that:
-          - ptr_record_info.objects | length == 1
-          - ptr_record_info.objects[0].id == ptr_record.id
-
-    - name: Get PTR Record information by raw filter query
-      infoblox.bloxone.dns_record_info:
-        filter_query: "name_in_zone=='{{ record_name }}' and type=='PTR'"
-    - assert:
-        that:
-          - ptr_record_info.objects | length == 1
-          - ptr_record_info.objects[0].id == ptr_record.id
-
-    - name: Get PTR Record information by filters (zone)
-      infoblox.bloxone.dns_record_info:
-        filters:
           zone: "{{ rmz.id }}"
           type: "PTR"
       register: ptr_record_info
@@ -54,8 +37,7 @@
 
     - name: Get PTR Record information by raw filter query
       infoblox.bloxone.dns_record_info:
-        filter_query: "zone=='{{ rmz.id }}' and type=='PTR'"
-      register: ptr_record_info
+        filter_query: "name_in_zone=='{{ record_name }}' and zone=='{{ rmz.id }}' and type=='PTR'"
     - assert:
         that:
           - ptr_record_info.objects | length == 1
@@ -74,7 +56,7 @@
     # Cleanup if the test fails
     - name: "Delete PTR Record"
       infoblox.bloxone.dns_record:
-        name_in_zone: 7
+        name_in_zone: "{{ record_name }}"
         zone: "{{ rmz.id }}"
         rdata:
             dname: "domain.com."

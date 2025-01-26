@@ -161,7 +161,7 @@
         rdata:
           dname: "ns1.example.com."
         type: "NS"
-        ttl: 3600
+        ttl: 5000
         state: present
       register: ns_record
     - name: Get information about the NS Record
@@ -176,7 +176,7 @@
         - ns_record_info is not failed
         - ns_record_info.objects | length == 1
         - ns_record_info.objects[0].id == ns_record.id
-        - ns_record_info.objects[0].ttl == 3600
+        - ns_record_info.objects[0].ttl == 5000
 
     - name: Create a NS Record with Disabled
       infoblox.bloxone.dns_record:
@@ -273,5 +273,3 @@
       ansible.builtin.include_role:
         name: setup_view
         tasks_from: cleanup.yml
-
-

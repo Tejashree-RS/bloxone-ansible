@@ -144,7 +144,7 @@
         comment: "This is a test Generic Record"
         state: present
       register: generic_record
-    - name: Get information about the Generic Record with comment
+    - name: Get information about the Generic Record
       infoblox.bloxone.dns_record_info:
         filters:
           zone: "{{ _auth_zone.id }}"
@@ -168,7 +168,7 @@
         ttl: 3600
         state: present
       register: generic_record
-    - name: Get information about the Generic Record with TTL
+    - name: Get information about the Generic Record
       infoblox.bloxone.dns_record_info:
         filters:
           zone: "{{ _auth_zone.id }}"
@@ -192,7 +192,7 @@
         disabled: true
         state: present
       register: generic_record
-    - name: Get information about the Generic Record with Disabled
+    - name: Get information about the Generic Record
       infoblox.bloxone.dns_record_info:
         filters:
           zone: "{{ _auth_zone.id }}"
@@ -217,7 +217,7 @@
           location: "site-1"
         state: present
       register: generic_record
-    - name: Get information about the Generic Record with Tags
+    - name: Get information about the Generic Record
       infoblox.bloxone.dns_record_info:
         filters:
           zone: "{{ _auth_zone.id }}"
@@ -243,7 +243,7 @@
             action: "inherit"
         state: present
       register: generic_record
-    - name: Get information about the Generic Record with Inheritance Options
+    - name: Get information about the Generic Record
       infoblox.bloxone.dns_record_info:
         filters:
           zone: "{{ _auth_zone.id }}"

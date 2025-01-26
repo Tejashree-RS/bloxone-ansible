@@ -119,6 +119,28 @@
         - svcb_record is not changed
         - svcb_record is not failed
 
+    - name: Create SVCB Record with Comment
+      infoblox.bloxone.dns_record:
+        zone: "{{ _auth_zone.id }}"
+        type: "SVCB"
+        rdata:
+          target_name: "service.example.com."
+        comment: "This is a test SVCB Record"
+        state: present
+      register: svcb_record
+    - name: Get information about the SVCB Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          zone: "{{ _auth_zone.id }}"
+          type: "SVCB"
+      register: svcb_record_info
+    - assert:
+        that:
+          - svcb_record_info is not failed
+          - svcb_record_info.objects | length == 1
+          - svcb_record_info.objects[0].id == svcb_record.id
+          - svcb_record_info.objects[0].comment == "This is a test SVCB Record"
+
     - name: Create SVCB Record with Disabled
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
@@ -163,7 +185,7 @@
         - svcb_record_info.objects[0].id == svcb_record.id
         - svcb_record_info.objects[0].ttl == 3600
 
-    - name: Create SVCB Record with TAGS
+    - name: Create SVCB Record with Tags
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         type: "SVCB"

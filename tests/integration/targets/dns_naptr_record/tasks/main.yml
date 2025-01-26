@@ -16,6 +16,7 @@
           order: 20
           preference: 10
           replacement: "."
+          services: "SIP+D2U"
         state: present
       check_mode: true
       register: naptr_record
@@ -39,6 +40,7 @@
           order: 20
           preference: 10
           replacement: "."
+          services: "SIP+D2U"
         state: present
       register: naptr_record
     - name: Get information about the NAPTR Record
@@ -67,6 +69,7 @@
           order: 20
           preference: 10
           replacement: "."
+          services: "SIP+D2U"
         state: present
       register: naptr_record
     - assert:
@@ -81,6 +84,7 @@
           order: 20
           preference: 10
           replacement: "."
+          services: "SIP+D2U"
         type: "NAPTR"
         state: absent
       check_mode: true
@@ -104,6 +108,7 @@
           order: 20
           preference: 10
           replacement: "."
+          services: "SIP+D2U"
         type: "NAPTR"
         state: absent
       register: naptr_record
@@ -125,6 +130,7 @@
           order: 20
           preference: 10
           replacement: "."
+          services: "SIP+D2U"
         type: "NAPTR"
         state: absent
       register: naptr_record
@@ -141,6 +147,7 @@
           order: 20
           preference: 10
           replacement: "."
+          services: "SIP+D2U"
         comment: "This is a test NAPTR Record"
         state: present
       register: naptr_record
@@ -165,6 +172,7 @@
           order: 20
           preference: 10
           replacement: "."
+          services: "SIP+D2U"
         ttl: 3600
         state: present
       register: naptr_record
@@ -189,6 +197,7 @@
           order: 20
           preference: 10
           replacement: "."
+          services: "SIP+D2U"
         tags:
           location: "site-1"
         state: present
@@ -214,6 +223,7 @@
           order: 20
           preference: 10
           replacement: "."
+          services: "SIP+D2U"
         disabled: true
         state: present
       register: naptr_record
@@ -238,6 +248,7 @@
           order: 20
           preference: 10
           replacement: "example.com."
+          services: "SIP+D2U"
         inheritance_sources:
           ttl:
             action: "inherit"
@@ -294,6 +305,7 @@
           order: 100
           preference: 10
           replacement: "."
+          services: "SIP+D2U"
         state: present
       register: naptr_record
     - name: Get information about the NAPTR Record

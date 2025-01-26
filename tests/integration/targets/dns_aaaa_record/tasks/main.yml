@@ -125,7 +125,7 @@
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          address: "2001:db8::3"
+          address: "2001:db8::4"
         type: "AAAA"
         comment: "This is a test AAAA Record"
         state: present
@@ -169,7 +169,7 @@
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          address: "2001:db8::5"
+          address: "2001:db8::4"
         type: "AAAA"
         disabled: true
         state: present
@@ -191,7 +191,7 @@
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          address: "2001:db8::6"
+          address: "2001:db8::4"
         type: "AAAA"
         tags:
           location: "site-1"
@@ -214,7 +214,7 @@
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          address: "2001:db8::7"
+          address: "2001:db8::4"
         type: "AAAA"
         inheritance_sources:
           ttl:
@@ -316,4 +316,3 @@
       ansible.builtin.include_role:
         name: setup_view
         tasks_from: cleanup.yml
-

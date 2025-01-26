@@ -254,7 +254,6 @@
         type: "MX"
         state: present
       register: mx_record
-
     - name: Get Information about the MX Record
       infoblox.bloxone.dns_record_info:
         filters:

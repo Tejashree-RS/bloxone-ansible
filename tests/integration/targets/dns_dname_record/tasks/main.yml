@@ -50,10 +50,9 @@
         - dname_record_info is not failed
         - dname_record_info.objects | length == 1
         - dname_record_info.objects[0].id == dname_record.id
-        - dname_record_info.objects[0].rdata.target == dname_record.object.rdata.target
-        - dname_record_info.objects[0].type == dname_record.object.type
+        - dname_record_info.objects[0].rdata.target ==  "google.com."
+        - dname_record_info.objects[0].type == "DNAME"
         - dname_record_info.objects[0].zone == dname_record.object.zone
-        - dname_record_info.objects[0].name_in_zone == dname_record.object.name_in_zone
 
     - name: Create a DNAME Record (idempotent)
       infoblox.bloxone.dns_record:
@@ -249,6 +248,13 @@
           name_in_zone: "{{ record_name }}"
           type: "DNAME"
       register: dname_record_info
+    - assert:
+        that:
+          - dname_record_info is not failed
+          - dname_record_info.objects | length == 1
+          - dname_record_info.objects[0].id == dname_record.id
+          - dname_record_info.objects[0].name_in_zone == dname_record.object.name_in_zone
+          - dname_record_info.objects[0].zone == dname_record.object.zone
 
   always:
      - name: "Delete the DNAME Record"

@@ -13,6 +13,7 @@
     # Basic Test for TXT Record
     - name: Create a TXT Record
       infoblox.bloxone.dns_record:
+        name_in_zone: "{{ record_name }}"
         zone: "{{ _auth_zone.id }}"
         rdata:
           text: "sample text"
@@ -25,7 +26,7 @@
     - name: Get TXT Record information by filters (name_in_zone)
       infoblox.bloxone.dns_record_info:
         filters:
-          zone: "{{ _auth_zone.id }}"
+          name_in_zone: "{{ record_name }}"
           type: "TXT"
       register: txt_record_info
     - assert:
@@ -35,7 +36,7 @@
 
     - name: Get TXT Record information by raw filter query
       infoblox.bloxone.dns_record_info:
-        filter_query: "zone=='{{ _auth_zone.id }}' and type=='TXT'"
+        filter_query: "name_in_zone=='{{ record_name }}' and type=='TXT'"
     - assert:
         that:
           - txt_record_info.objects | length == 1
