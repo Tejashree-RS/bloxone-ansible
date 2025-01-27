@@ -990,6 +990,11 @@ def main():
         required_by={"name_in_zone": "zone"},
     )
 
+    type = module.params["type"]
+    name_in_zone = module.params["name_in_zone"]
+    if type in ["CNAME", "NS", "PTR"] and not name_in_zone:
+        module.fail_json(msg=f"'name_in_zone' is required for resource record 'type' '{type}'.")
+
     module.run_command()
 
 
