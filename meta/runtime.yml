@@ -103,3 +103,39 @@ plugin_routing:
           deprecation:
             removal_version: 3.0.0
             warning_text: Use infoblox.bloxone.ipam_address_info instead.
+
+        b1_a_record:
+          deprecation:
+            removal_version: 3.0.0
+            warning_text: Use infoblox.bloxone.dns_record instead.
+        b1_a_record_gather:
+          deprecation:
+              removal_version: 3.0.0
+              warning_text: Use infoblox.bloxone.dns_record_info instead.
+
+        b1_cname_record:
+            deprecation:
+                removal_version: 3.0.0
+                warning_text: Use infoblox.bloxone.dns_record instead.
+        b1_cname_record_gather:
+            deprecation:
+                removal_version: 3.0.0
+                warning_text: Use infoblox.bloxone.dns_record_info instead.
+
+        b1_ns_record:
+            deprecation:
+                removal_version: 3.0.0
+                warning_text: Use infoblox.bloxone.dns_record instead.
+        b1_ns_record_gather:
+            deprecation:
+                removal_version: 3.0.0
+                warning_text: Use infoblox.bloxone.dns_record_info instead.
+
+        b1_ptr_record:
+            deprecation:
+                removal_version: 3.0.0
+                warning_text: Use infoblox.bloxone.dns_record instead.
+        b1_ptr_record_gather:
+            deprecation:
+                removal_version: 3.0.0
+                warning_text: Use infoblox.bloxone.dns_record_info instead.
