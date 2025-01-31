@@ -23,28 +23,18 @@
         state: present
       register: svcb_record
 
-    - name: Get SVCB Record information by filters (name_in_zone)
+    - name: Get SVCB Record information by ID
       infoblox.bloxone.dns_record_info:
-        filters:
-          name_in_zone: "{{ record_name }}"
-          type: "SVCB"
+        id: "{{ svcb_record.id }}"
       register: svcb_record_info
     - assert:
         that:
           - svcb_record_info.objects | length == 1
-          - svcb_record_info.objects[0].id == svcb_record.id
 
-    - name: Get SVCB Record information by raw filter query
-      infoblox.bloxone.dns_record_info:
-        filter_query: "name_in_zone=='{{ record_name }}' and type=='SVCB'"
-    - assert:
-        that:
-          - svcb_record_info.objects | length == 1
-          - svcb_record_info.objects[0].id == svcb_record.id
-
-    - name: Get SVCB Record information by filters (zone)
+    - name: Get SVCB Record information by filters
       infoblox.bloxone.dns_record_info:
         filters:
+          name_in_zone: "{{ record_name }}"
           zone: "{{ _auth_zone.id }}"
           type: "SVCB"
       register: svcb_record_info
@@ -55,8 +45,7 @@
 
     - name: Get SVCB Record information by raw filter query
       infoblox.bloxone.dns_record_info:
-        filter_query: "zone=='{{ _auth_zone.id }}' and type=='SVCB'"
-      register: svcb_record_info
+        filter_query: "name_in_zone=='{{ record_name }}' and zone=='{{ _auth_zone.id }}' and type=='SVCB'"
     - assert:
         that:
           - svcb_record_info.objects | length == 1

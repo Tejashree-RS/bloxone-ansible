@@ -23,28 +23,18 @@
         state: present
       register: dname_record
 
-    - name: Get DNAME Record information by filters (name_in_zone)
+    - name: Get DNAME Record information by ID
       infoblox.bloxone.dns_record_info:
-        filters:
-          name_in_zone: "{{ record_name }}"
-          type: "DNAME"
+        id: "{{ dname_record.id }}"
       register: dname_record_info
     - assert:
         that:
           - dname_record_info.objects | length == 1
-          - dname_record_info.objects[0].id == dname_record.id
 
-    - name: Get DNAME Record information by raw filter query
-      infoblox.bloxone.dns_record_info:
-        filter_query: "name_in_zone=='{{ record_name }}' and type=='DNAME'"
-    - assert:
-        that:
-          - dname_record_info.objects | length == 1
-          - dname_record_info.objects[0].id == dname_record.id
-
-    - name: Get DNAME Record information by filters (zone)
+    - name: Get DNAME Record information by filters
       infoblox.bloxone.dns_record_info:
         filters:
+          name_in_zone: "{{ record_name }}"
           zone: "{{ _auth_zone.id }}"
           type: "DNAME"
       register: dname_record_info
@@ -55,8 +45,7 @@
 
     - name: Get DNAME Record information by raw filter query
       infoblox.bloxone.dns_record_info:
-        filter_query: "zone=='{{ _auth_zone.id }}' and type=='DNAME'"
-      register: dname_record_info
+        filter_query: "name_in_zone=='{{ record_name }}' and zone=='{{ _auth_zone.id }}' and type=='DNAME'"
     - assert:
         that:
           - dname_record_info.objects | length == 1
@@ -78,7 +67,7 @@
         name_in_zone: "{{ record_name }}"
         zone: "{{ _auth_zone.id }}"
         rdata:
-          dname: "google.com."
+          target: "google.com."
         type: "DNAME"
         state: "absent"
       ignore_errors: true

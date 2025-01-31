@@ -238,7 +238,7 @@
           - a_record_info.objects[0].id == a_record.id
           - a_record_info.objects[0].inheritance_sources.ttl.action == "inherit"
 
-    - name: Create an A Record with Options
+    - name: Create an A Record with Options (create_ptr and check_rmz are true)
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
@@ -247,6 +247,74 @@
         options:
           create_ptr: true
           check_rmz: true
+        state: present
+      register: a_record
+    - name: Get Information about the A Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          zone: "{{ _auth_zone.id }}"
+          type: "A"
+      register: a_record_info
+    - assert:
+        that:
+          - a_record_info is not failed
+          - a_record_info.objects | length == 1
+          - a_record_info.objects[0].id == a_record.id
+    - name: Get Information about the PTR Record created in the Reverse Mapping Zone
+      infoblox.bloxone.dns_record_info:
+        filters:
+          zone: "{{ rmz.id }}"
+          type: "PTR"
+      register: ptr_record_info
+    - assert:
+        that:
+          - ptr_record_info is not failed
+          - ptr_record_info.objects | length == 1
+          - ptr_record_info.objects[0].zone == rmz.id
+
+    - name: Create an A Record with Options (create_ptr is true and check_rmz is false)
+      infoblox.bloxone.dns_record:
+        zone: "{{ _auth_zone.id }}"
+        rdata:
+          address: "40.0.0.0"
+        type: "A"
+        options:
+          create_ptr: true
+          check_rmz: false
+        state: present
+      register: a_record
+    - name: Get Information about the A Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          zone: "{{ _auth_zone.id }}"
+          type: "A"
+      register: a_record_info
+    - assert:
+        that:
+          - a_record_info is not failed
+          - a_record_info.objects | length == 1
+          - a_record_info.objects[0].id == a_record.id
+    - name: Get Information about the PTR Record created in the Reverse Mapping Zone
+      infoblox.bloxone.dns_record_info:
+        filters:
+          zone: "{{ rmz.id }}"
+          type: "PTR"
+      register: ptr_record_info
+    - assert:
+        that:
+          - ptr_record_info is not failed
+          - ptr_record_info.objects | length == 1
+          - ptr_record_info.objects[0].zone == rmz.id
+
+    - name: Create an A Record with Options (create_ptr and check_rmz are false)
+      infoblox.bloxone.dns_record:
+        zone: "{{ _auth_zone.id }}"
+        rdata:
+          address: "40.0.0.0"
+        type: "A"
+        options:
+          create_ptr: false
+          check_rmz: false
         state: present
       register: a_record
     - name: Get Information about the A Record

@@ -13,7 +13,6 @@
         zone: "{{ _auth_zone.id }}"
         type: "CAA"
         rdata:
-          flags: 0
           tag: "issue"
           value: "ca.example.com"
         state: present
@@ -36,7 +35,6 @@
         zone: "{{ _auth_zone.id }}"
         type: "CAA"
         rdata:
-          flags: 0
           tag: "issue"
           value: "ca.example.com"
         state: present
@@ -53,7 +51,6 @@
         - caa_record_info is not failed
         - caa_record_info.objects | length == 1
         - caa_record_info.objects[0].id == caa_record.id
-        - caa_record_info.objects[0].rdata.flags == 0
         - caa_record_info.objects[0].rdata.tag == "issue"
         - caa_record_info.objects[0].rdata.value == "ca.example.com"
         - caa_record_info.objects[0].type == "CAA"
@@ -64,7 +61,6 @@
         zone: "{{ _auth_zone.id }}"
         type: "CAA"
         rdata:
-          flags: 0
           tag: "issue"
           value: "ca.example.com"
         state: present
@@ -78,7 +74,6 @@
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          flags: 0
           tag: "issue"
           value: "ca.example.com"
         type: "CAA"
@@ -101,7 +96,6 @@
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          flags: 0
           tag: "issue"
           value: "ca.example.com"
         type: "CAA"
@@ -122,7 +116,6 @@
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          flags: 0
           tag: "issue"
           value: "ca.example.com"
         type: "CAA"
@@ -251,13 +244,35 @@
           - caa_record_info.objects[0].id == caa_record.id
           - caa_record_info.objects[0].inheritance_sources.ttl.action == "inherit"
 
+    - name: Create a CAA Record with Flags
+      infoblox.bloxone.dns_record:
+        zone: "{{ _auth_zone.id }}"
+        type: "CAA"
+        rdata:
+          tag: "issue"
+          value: "ca.example.com"
+          flags: 1
+        state: present
+      register: caa_record
+    - name: Get information about the CAA Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          zone: "{{ _auth_zone.id }}"
+          type: "CAA"
+      register: caa_record_info
+    - assert:
+       that:
+         - caa_record_info is not failed
+         - caa_record_info.objects | length == 1
+         - caa_record_info.objects[0].id == caa_record.id
+         - caa_record_info.objects[0].rdata.flags == 1
+
     - name: Create a CAA record with Name in Zone and Zone
       infoblox.bloxone.dns_record:
         name_in_zone: "{{ record_name }}"
         zone: "{{ _auth_zone.id }}"
         type: "CAA"
         rdata:
-          flags: 0
           tag: "issue"
           value: "ca.example.com"
         state: present
@@ -283,7 +298,6 @@
         zone: "{{ _auth_zone.id }}"
         type: "CAA"
         rdata:
-          flags: 0
           tag: "issue"
           value: "ca.example.com"
         state: absent

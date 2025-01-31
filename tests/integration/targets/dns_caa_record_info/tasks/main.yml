@@ -24,28 +24,18 @@
         state: present
       register: caa_record
 
-    - name: Get CAA Record information by filters (name_in_zone)
+    - name: Get CAA Record information by ID
       infoblox.bloxone.dns_record_info:
-        filters:
-          name_in_zone: "{{ record_name }}"
-          type: "CAA"
+        id: "{{ caa_record.id }}"
       register: caa_record_info
     - assert:
         that:
           - caa_record_info.objects | length == 1
-          - caa_record_info.objects[0].id == caa_record.id
 
-    - name: Get CAA Record information by raw filter query
-      infoblox.bloxone.dns_record_info:
-        filter_query: "name_in_zone=='{{ record_name }}' and type=='CAA'"
-    - assert:
-        that:
-          - caa_record_info.objects | length == 1
-          - caa_record_info.objects[0].id == caa_record.id
-
-    - name: Get CAA Record information by filters (zone)
+    - name: Get CAA Record information by filters
       infoblox.bloxone.dns_record_info:
         filters:
+          name_in_zone: "{{ record_name }}"
           zone: "{{ _auth_zone.id }}"
           type: "CAA"
       register: caa_record_info
@@ -56,8 +46,7 @@
 
     - name: Get CAA Record information by raw filter query
       infoblox.bloxone.dns_record_info:
-        filter_query: "zone=='{{ _auth_zone.id }}' and type=='CAA'"
-      register: caa_record_info
+        filter_query: "name_in_zone=='{{ record_name }}' and zone=='{{ _auth_zone.id }}' and type=='CAA'"
     - assert:
         that:
           - caa_record_info.objects | length == 1

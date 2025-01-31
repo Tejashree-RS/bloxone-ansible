@@ -1,4 +1,4 @@
-# Define the module defaults
+---
 - module_defaults:
     group/infoblox.bloxone.all:
       csp_url: "{{ csp_url }}"
@@ -23,7 +23,15 @@
         state: present
       register: ns_record
 
-    - name: Get NS Record information
+    - name: Get NS Record information by ID
+      infoblox.bloxone.dns_record_info:
+        id: "{{ ns_record.id }}"
+      register: ns_record_info
+    - assert:
+        that:
+          - ns_record_info.objects | length == 1
+
+    - name: Get NS Record information by filters
       infoblox.bloxone.dns_record_info:
         filters:
           name_in_zone: "{{ record_name }}"
@@ -59,7 +67,7 @@
         name_in_zone: "{{ record_name }}"
         zone: "{{ _auth_zone.id }}"
         rdata:
-            dname: "ns1.example.com."
+          dname: "ns1.example.com."
         type: "NS"
         state: "absent"
       ignore_errors: true

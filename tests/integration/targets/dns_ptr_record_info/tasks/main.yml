@@ -23,7 +23,15 @@
         state: present
       register: ptr_record
 
-    - name: Get PTR Record information
+    - name: Get PTR Record information by ID
+      infoblox.bloxone.dns_record_info:
+        id: "{{ ptr_record.id }}"
+      register: ptr_record_info
+    - assert:
+        that:
+          - ptr_record_info.objects | length == 1
+
+    - name: Get PTR Record information by filters
       infoblox.bloxone.dns_record_info:
         filters:
           name_in_zone: "{{ record_name }}"

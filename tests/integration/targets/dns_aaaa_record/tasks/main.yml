@@ -71,7 +71,7 @@
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          address: "2001:db8::2"
+          address: "2001:db8::1"
         type: "AAAA"
         state: absent
       check_mode: true
@@ -92,7 +92,7 @@
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          address: "2001:db8::2"
+          address: "2001:db8::1"
         type: "AAAA"
         state: absent
       register: aaaa_record
@@ -112,7 +112,7 @@
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
-          address: "2001:db8::2"
+          address: "2001:db8::1"
         type: "AAAA"
         state: absent
       register: aaaa_record
@@ -234,7 +234,7 @@
           - aaaa_record_info.objects[0].id == aaaa_record.id
           - aaaa_record_info.objects[0].inheritance_sources.ttl.action == "inherit"
 
-    - name: Create AAAA Record with Options
+    - name: Create AAAA Record with Options (create_ptr and check_rmz are true)
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         rdata:
@@ -243,6 +243,74 @@
         options:
           create_ptr: true
           check_rmz: true
+        state: present
+      register: aaaa_record_options
+    - name: Get information about the AAAA Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          zone: "{{ _auth_zone.id }}"
+          type: "AAAA"
+      register: aaaa_record_info
+    - assert:
+        that:
+          - aaaa_record_info is not failed
+          - aaaa_record_info.objects | length == 1
+          - aaaa_record_info.objects[0].id == aaaa_record_options.id
+    - name: Get Information about the PTR Record created in the Reverse Mapping Zone
+      infoblox.bloxone.dns_record_info:
+        filters:
+          zone: "{{ rmz_ipv6.id }}"
+          type: "PTR"
+      register: ptr_record_info
+    - assert:
+        that:
+          - ptr_record_info is not failed
+          - ptr_record_info.objects | length == 1
+          - ptr_record_info.objects[0].zone == rmz_ipv6.id
+
+    - name: Create AAAA Record with Options (create_ptr is true and check_rmz is false)
+      infoblox.bloxone.dns_record:
+        zone: "{{ _auth_zone.id }}"
+        rdata:
+          address: "2001::0"
+        type: "AAAA"
+        options:
+          create_ptr: true
+          check_rmz: false
+        state: present
+      register: aaaa_record_options
+    - name: Get information about the AAAA Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          zone: "{{ _auth_zone.id }}"
+          type: "AAAA"
+      register: aaaa_record_info
+    - assert:
+        that:
+          - aaaa_record_info is not failed
+          - aaaa_record_info.objects | length == 1
+          - aaaa_record_info.objects[0].id == aaaa_record_options.id
+    - name: Get Information about the PTR Record created in the Reverse Mapping Zone
+      infoblox.bloxone.dns_record_info:
+        filters:
+          zone: "{{ rmz_ipv6.id }}"
+          type: "PTR"
+      register: ptr_record_info
+    - assert:
+        that:
+          - ptr_record_info is not failed
+          - ptr_record_info.objects | length == 1
+          - ptr_record_info.objects[0].zone == rmz_ipv6.id
+
+    - name: Create AAAA Record with Options (create_ptr and check_rmz are false)
+      infoblox.bloxone.dns_record:
+        zone: "{{ _auth_zone.id }}"
+        rdata:
+          address: "2001::0"
+        type: "AAAA"
+        options:
+          create_ptr: false
+          check_rmz: false
         state: present
       register: aaaa_record_options
     - name: Get information about the AAAA Record

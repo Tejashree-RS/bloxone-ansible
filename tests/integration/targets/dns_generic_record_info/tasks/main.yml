@@ -24,28 +24,18 @@
         state: present
       register: generic_record
 
-    - name: Get Generic Record information by filters (name_in_zone)
+    - name: Get Generic Record information by ID
       infoblox.bloxone.dns_record_info:
-        filters:
-          name_in_zone: "{{ record_name }}"
-          type: "TYPE256"
+            id: "{{ generic_record.id }}"
       register: generic_record_info
     - assert:
         that:
           - generic_record_info.objects | length == 1
-          - generic_record_info.objects[0].id == generic_record.id
 
-    - name: Get Generic Record information by raw filter query
-      infoblox.bloxone.dns_record_info:
-        filter_query: "name_in_zone=='{{ record_name }}' and type=='TYPE256'"
-    - assert:
-        that:
-          - generic_record_info.objects | length == 1
-          - generic_record_info.objects[0].id == generic_record.id
-
-    - name: Get Generic Record information by filters (zone)
+    - name: Get Generic Record information by filters
       infoblox.bloxone.dns_record_info:
         filters:
+          name_in_zone: "{{ record_name }}"
           zone: "{{ _auth_zone.id }}"
           type: "TYPE256"
       register: generic_record_info
@@ -56,8 +46,7 @@
 
     - name: Get Generic Record information by raw filter query
       infoblox.bloxone.dns_record_info:
-        filter_query: "zone=='{{ _auth_zone.id }}' and type=='TYPE256'"
-      register: generic_record_info
+        filter_query: "name_in_zone=='{{ record_name }}' and zone=='{{ _auth_zone.id }}' and type=='TYPE256'"
     - assert:
         that:
           - generic_record_info.objects | length == 1

@@ -333,6 +333,7 @@
           order: 20
           preference: 10
           replacement: "."
+          services: "SIP+D2U"
         type: "NAPTR"
         state: "absent"
       ignore_errors: true

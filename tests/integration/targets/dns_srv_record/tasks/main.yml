@@ -141,7 +141,6 @@
           port: 5060
           priority: 10
           target: "service.example.com."
-          weight: 10
         comment: "This is a test SRV Record"
         state: present
       register: srv_record
@@ -156,7 +155,6 @@
         - srv_record_info is not failed
         - srv_record_info.objects | length == 1
         - srv_record_info.objects[0].id == srv_record.id
-        - srv_record_info.objects[0].rdata.weight == 10
         - srv_record_info.objects[0].comment == "This is a test SRV Record"
 
     - name: Create SRV Record with Disabled
@@ -257,6 +255,30 @@
           - srv_record_info.objects | length == 1
           - srv_record_info.objects[0].id == srv_record.id
           - srv_record_info.objects[0].inheritance_sources.ttl.action == "inherit"
+
+    - name: Create a SRV Record with Weights
+      infoblox.bloxone.dns_record:
+        zone: "{{ _auth_zone.id }}"
+        type: "SRV"
+        rdata:
+          port: 5060
+          priority: 10
+          target: "service.example.com."
+          weight: 10
+        state: present
+      register: srv_record
+    - name: Get information about the SRV Record
+      infoblox.bloxone.dns_record_info:
+        filters:
+          zone: "{{ _auth_zone.id }}"
+          type: "SRV"
+      register: srv_record_info
+    - assert:
+        that:
+            - srv_record_info is not failed
+            - srv_record_info.objects | length == 1
+            - srv_record_info.objects[0].id == srv_record.id
+            - srv_record_info.objects[0].rdata.weight == 10
 
     - name: Create a SRV Record with Name in Zone and Zone
       infoblox.bloxone.dns_record:

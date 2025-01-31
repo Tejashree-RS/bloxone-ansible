@@ -325,7 +325,7 @@ EXAMPLES = r"""
         state: present
       register: _view 
         
-    - name: Create an Auth Zone (required as parent) 
+    - name: Create an Auth Zone in the View (required as parent) 
       infoblox.bloxone.dns_auth_zone:
         fqdn: "example_zone"
         primary_type: "cloud"
@@ -333,25 +333,27 @@ EXAMPLES = r"""
         state: "present"
       register: _auth_zone
     
-    - name: Create an A Record in an Auth Zone
+    - name: Create an A Record in the Auth Zone
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
-        comment: "Example A Record"
         rdata:
             address: "192.168.10.10"
         type: "A"
-        state: "present"        
-        
-    - name: Create an A Record with Name in Zone and Zone
+        state: "present"       
+                
+    - name: Create an A Record with Additional Fields
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         name_in_zone: "example_a_record"
-        comment: "Example A Record"
-        ttl: 3600
-        disabled: true
         rdata:  
             address: "192.168.10.10"
         type: "A"
+        comment: "This is an example A Record"
+        ttl: 3600
+        disabled: true
+        inheritance_sources:
+            ttl:
+                action: "inherit"
         tags:
             location: "site-1"
         state: "present"
@@ -368,396 +370,110 @@ EXAMPLES = r"""
     - name: Create an AAAA Record in an Auth Zone
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
-        comment: "Example AAAA Record"
         rdata:
             address: "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
         type: "AAAA"
         state: "present"
-    
-    - name: Create an AAAA Record with Name in Zone and Zone
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_aaaa_record"
-        comment: "Example AAAA Record"
-        ttl: 3600
-        disabled: true
-        rdata:  
-            address: "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
-        type: "AAAA"
-        tags:
-            location: "site-1"
-        state: "present"
-    
-    - name: Delete the AAAA Record
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_aaaa_record"
-        rdata:
-            address: "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
-        type: "AAAA"
-        state: "absent"
 
     - name: Create a CAA Record in an Auth Zone
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
-        comment: "Example CAA Record"
         rdata:
-          flags: 0
           tag: "issue"
           value: "ca.example.com"
         type: "CAA"
         state: "present"
-        
-    - name: Create a CAA Record with Name in Zone and Zone
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_caa_record"
-        comment: "Example CAA Record"
-        ttl: 3600
-        disabled: true
-        rdata:
-          flags: 0
-          tag: "issue"
-          value: "ca.example.com"
-        type: "CAA"
-        tags:
-          location: "site-1"
-        state: "present"
-        
-    - name: Delete the CAA Record
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_caa_record"
-        rdata:
-          flags: 0
-          tag: "issue"
-          value: "ca.example.com"
-        type: "CAA"
-        state: "absent"
 
     - name: Create a CNAME Record in an Auth Zone
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         name_in_zone: "example_cname_record"
-        comment: "Example CNAME Record"
-        ttl: 3600
-        disabled: true
         rdata:
-          canonical: "example.com"
+          cname: "example.com"
         type: "CNAME"
-        tags:
-          location: "site-1"
         state: "present"
-        
-    - name: Delete the CNAME Record
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_cname_record"
-        rdata:
-          canonical: "example.com"
-        type: "CNAME"
-        state: "absent"
 
     - name: Create a DNAME Record in an Auth Zone
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
-        comment: "Example DNAME Record"
         rdata:
-          dname: "google.com."
+          target: "google.com."
         type: "DNAME"
         state: "present"
-                
-    - name: Create a DNAME Record with Name in Zone and Zone
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_dname_record"
-        comment: "Example DNAME Record"
-        ttl: 3600
-        disabled: true
-        rdata:
-          dname: "google.com."
-        type: "DNAME"
-        tags:
-          location: "site-1"
-        state: "present"
-                
-    - name: Delete the DNAME Record
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_dname_record"
-        rdata:
-          dname: "google.com."
-        type: "DNAME"
-        state: "absent"
 
     - name: Create a Generic Record in an Auth Zone (e.g, TYPE256)
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
-        comment: "Example Generic Record"
         rdata:
           subfields:
             - type: "PRESENTATION"
               value: "10 1 \"https://example.com\""
         type: "TYPE256"
         state: "present"
-        
-    - name: Create a Generic Record with Name in Zone and Zone
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_generic_record"
-        comment: "Example Generic Record"
-        ttl: 3600
-        disabled: true
-        rdata:
-          subfields:
-            - type: "PRESENTATION"
-              value: "10 1 \"https://example.com\""
-        type: "TYPE256"
-        tags:
-          location: "site-1"
-        state: "present"
-        
-    - name: Delete the Generic Record
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_generic_record"
-        rdata:
-          subfields:
-            - type: "PRESENTATION"
-              value: "10 1 \"https://example.com\""
-        type: "TYPE256"
-        state: "absent"
     
     - name: Create a MX Record in an Auth Zone
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
-        comment: "Example MX Record"
         rdata:
           preference: 10
           exchange: "mail.example.com."
         type: "MX"
         state: "present"
         
-    - name: Create a MX Record with Name in Zone and Zone
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_mx_record"
-        comment: "Example MX Record"
-        ttl: 3600
-        disabled: true
-        rdata:
-          preference: 10
-          exchange: "mail.example.com."
-        type: "MX"
-        tags:
-          location: "site-1"
-        state: "present"
-        
-    - name: Delete the MX Record
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_mx_record"
-        rdata:
-          preference: 10
-          exchange: "mail.example.com."
-        type: "MX"
-        state: "absent"
-
     - name: Create a NAPTR Record in an Auth Zone
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
-        comment: "Example NAPTR Record"
         rdata:
           order: 100
           preference: 10
-          flags: "A"
-          services: "E2U+sip"
-          regexp: "!^.*$!sip:example@domain.com!"
           replacement: "."
+          services: "SIP+D2U"     
         type: "NAPTR"
         state: "present"
-        
-    - name: Create a NAPTR Record with Name in Zone and Zone
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_naptr_record"
-        comment: "Example NAPTR Record"
-        ttl: 3600
-        disabled: true
-        rdata:
-          order: 100
-          preference: 10
-          flags: "A"
-          services: "E2U+sip"
-          regexp: "!^.*$!sip:example@domain.com!"
-          replacement: "."
-        type: "NAPTR"
-        tags:
-          location: "site-1"
-        state: "present"
-        
-    - name: Delete the NAPTR Record
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_naptr_record"
-        rdata:
-          order: 100
-          preference: 10
-          services: "E2U+sip"
-          replacement: "."
-        type: "NAPTR"
-        state: "absent"
         
     - name: Create a NS Record in an Auth Zone
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
         name_in_zone: "example_ns_record"
-        comment: "Example NS Record"
-        ttl: 3600
-        disabled: true
         rdata:
-          nsdname: "ns.example.com."
+          dname: "ns.example.com."
         type: "NS"
-        tags:
-          location: "site-1"
         state: "present"
     
-    - name: Delete the NS Record
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_ns_record"
-        rdata:
-          nsdname: "ns.example.com."
-        type: "NS"
-        state: "absent"
-
     - name: Create a PTR Record in an Auth Zone
       infoblox.bloxone.dns_record:
         zone: "{{ rmz.id }}" 
         name_in_zone: "1.0.0" # Note: 10.in-addr.arpa is the reverse mapping zone 
-        comment: "Example PTR Record"
-        ttl: 3600
-        disabled: true
         rdata:
           dname: "ptr.example.com."
         type: "PTR"
-        tags:
-          location: "site-1"
         state: "present"
     
-    - name: Delete the PTR Record
-      infoblox.bloxone.dns_record:
-        zone: "{{ rmz.id }}"
-        name_in_zone: "1.0.0"
-        rdata:
-          dname: "ptr.example.com."
-        type: "PTR"
-        state: "absent"
-
     - name: Create a SRV Record in an Auth Zone
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
-        comment: "Example SRV Record"
         rdata:
           priority: 10
-          weight: 5
           port: 5060
-          target: "sip.example.com."
+          target: "srv.example.com."
         type: "SRV"
         state: "present"
         
-    - name: Create a SRV Record with Name in Zone and Zone
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_srv_record"
-        comment: "Example SRV Record"
-        ttl: 3600
-        disabled: true
-        rdata:
-          priority: 10
-          weight: 5
-          port: 5060
-          target: "sip.example.com."
-        type: "SRV"
-        tags:
-          location: "site-1"
-        state: "present"
-        
-    - name: Delete the SRV Record
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_srv_record"
-        rdata:
-          priority: 10
-          weight: 5
-          port: 5060
-          target: "sip.example.com."
-        type: "SRV"
-        state: "absent"
-    
     - name: Create a SVCB Record in an Auth Zone
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
-        comment: "Example SVCB Record"
         rdata:
             target_name: "svc.example.com."
         type: "SVCB"
         state: "present"
-      
-    - name: Create a SVCB Record with Name in Zone and Zone
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_svbc_record"
-        comment: "Example SVCB Record"
-        ttl: 3600
-        disabled: true
-        rdata:
-            target_name: "svc.example.com."
-        type: "SVCB"
-        tags:
-            location: "site-1"
-        state: "present"
-      
-    - name: Delete the SVCB Record
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_svbc_record"
-        rdata:
-            target_name: "svc.example.com."
-        type: "SVCB"
-        state: "absent"
-           
+
     - name: Create a TXT Record in an Auth Zone
       infoblox.bloxone.dns_record:
         zone: "{{ _auth_zone.id }}"
-        comment: "Example TXT Record"
         rdata:
           text: "sample text"
         type: "TXT"
-        state: "present"        
-            
-    - name: Create a TXT Record with Name in Zone and Zone
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_txt_record"
-        comment: "Example TXT Record"
-        ttl: 3600
-        disabled: true
-        rdata:  
-          text: "sample text"
-        type: "TXT"
-        tags:
-          location: "site-1"
-        state: "present"
-            
-    - name: Delete the TXT Record
-      infoblox.bloxone.dns_record:
-        zone: "{{ _auth_zone.id }}"
-        name_in_zone: "example_txt_record"
-        rdata:
-          text: "sample text"
-        type: "TXT"
-        state: "absent"    
+        state: "present"         
 """  # noqa: E501
 
 RETURN = r"""

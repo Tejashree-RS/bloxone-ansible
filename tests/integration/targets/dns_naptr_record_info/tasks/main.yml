@@ -1,4 +1,4 @@
-# Define the module defaults
+---
 - module_defaults:
     group/infoblox.bloxone.all:
       csp_url: "{{ csp_url }}"
@@ -19,34 +19,25 @@
         rdata:
           order: 100
           preference: 10
-          replacement: "example.com."
+          replacement: "."
+          service: "SIP+D2U"
         tags:
           location: "{{ tag_value }}"
         state: present
       register: naptr_record
 
-    - name: Get NAPTR Record information by filters (name_in_zone)
+    - name: Get NAPTR Record information by ID
       infoblox.bloxone.dns_record_info:
-        filters:
-          name_in_zone: "{{ record_name }}"
-          type: "NAPTR"
+        id: "{{ naptr_record.id }}"
       register: naptr_record_info
     - assert:
         that:
           - naptr_record_info.objects | length == 1
-          - naptr_record_info.objects[0].id == naptr_record.id
 
-    - name: Get NAPTR Record information by raw filter query
-      infoblox.bloxone.dns_record_info:
-        filter_query: "name_in_zone=='{{ record_name }}' and type=='NAPTR'"
-    - assert:
-        that:
-          - naptr_record_info.objects | length == 1
-          - naptr_record_info.objects[0].id == naptr_record.id
-
-    - name: Get NAPTR Record information by filters (zone)
+    - name: Get NAPTR Record information by filters
       infoblox.bloxone.dns_record_info:
         filters:
+          name_in_zone: "{{ record_name }}"
           zone: "{{ _auth_zone.id }}"
           type: "NAPTR"
       register: naptr_record_info
@@ -57,8 +48,7 @@
 
     - name: Get NAPTR Record information by raw filter query
       infoblox.bloxone.dns_record_info:
-        filter_query: "zone=='{{ _auth_zone.id }}' and type=='NAPTR'"
-      register: naptr_record_info
+        filter_query: "name_in_zone=='{{ record_name }}' and zone=='{{ _auth_zone.id }}' and type=='NAPTR'"
     - assert:
         that:
           - naptr_record_info.objects | length == 1
@@ -82,7 +72,7 @@
         rdata:
           order: 100
           preference: 10
-          replacement: "example.com."
+          replacement: "."
         type: "NAPTR"
         state: "absent"
       ignore_errors: true

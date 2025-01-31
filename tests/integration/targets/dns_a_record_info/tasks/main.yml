@@ -22,28 +22,18 @@
         state: present
       register: a_record
 
-    - name: Get A Record information by filters (name_in_zone)
+    - name: Get A Record information by ID
       infoblox.bloxone.dns_record_info:
-        filters:
-          name_in_zone: "{{ record_name }}"
-          type: "A"
+        id: "{{ a_record.id }}"
       register: a_record_info
     - assert:
         that:
           - a_record_info.objects | length == 1
-          - a_record_info.objects[0].id == a_record.id
 
-    - name: Get A Record information by raw filter query
-      infoblox.bloxone.dns_record_info:
-        filter_query: "name_in_zone=='{{ record_name }}' and type=='A'"
-    - assert:
-        that:
-          - a_record_info.objects | length == 1
-          - a_record_info.objects[0].id == a_record.id
-
-    - name: Get A Record information by filters (zone)
+    - name: Get A Record information by filters
       infoblox.bloxone.dns_record_info:
         filters:
+          name_in_zone: "{{ record_name }}"
           zone: "{{ _auth_zone.id }}"
           type: "A"
       register: a_record_info
@@ -54,7 +44,7 @@
 
     - name: Get A Record information by raw filter query
       infoblox.bloxone.dns_record_info:
-        filter_query: "zone=='{{ _auth_zone.id }}' and type=='A'"
+        filter_query: "name_in_zone=='{{ record_name }}' and zone=='{{ _auth_zone.id }}' and type=='A'"
       register: a_record_info
     - assert:
         that:
