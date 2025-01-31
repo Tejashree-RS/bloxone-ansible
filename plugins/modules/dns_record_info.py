@@ -70,7 +70,7 @@ EXAMPLES = r"""
 
   - name: Get Record information by raw filter query 
     infoblox.bloxone.dns_record_info:
-      filter_query: "name_in_zone=='{{ record_name }}' and zone=='{{ _auth_zone.id }}' and type=='A'"
+      filter_query: "name_in_zone=='example_a_record' and zone=='example_zone_id' and type=='A'"
 
   - name: Get Record information by tag filters
     infoblox.bloxone.dns_record_info:
