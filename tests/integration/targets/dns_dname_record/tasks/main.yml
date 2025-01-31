@@ -1,8 +1,8 @@
 ---
 - module_defaults:
     group/infoblox.bloxone.all:
-      csp_url: "{{ csp_url }}"
-      api_key: "{{ api_key }}"
+      portal_url: "{{ portal_url }}"
+      portal_key: "{{ portal_key }}"
 
   block:
     - ansible.builtin.set_fact:
@@ -245,6 +245,7 @@
       infoblox.bloxone.dns_record_info:
         filters:
           name_in_zone: "{{ record_name }}"
+          zone: "{{ _auth_zone.id }}"
           type: "DNAME"
       register: dname_record_info
     - assert:
